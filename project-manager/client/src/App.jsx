@@ -1,57 +1,20 @@
-import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import axios from 'axios'
-import './App.css'
+import { Route, Routes } from "react-router"
+import PropertyPage from "./pages/PropertyPage"
+import ApartmentPage from "./pages/ApartmentPage"
+import TenantPage from "./pages/TenantPage"
+import toast from "react-hot-toast"
+import "./index.css"
+import Navbar from "./components/Navbar"
 
-function App() {
-  const [count, setCount] = useState(0)
-  const [message, setMessage] = useState("")
-  useEffect(() => {
-    axios.get('/api')
-    .then(response => {
-      setMessage(response.data.message);
-    })
-    .catch(error => console.error(error));
-  }, [])
-  // useEffect(() => {
-  //   fetch("/api").then(
-  //     response => response.json()
-  //   ).then(
-  //     data => {
-  //       setMessage(data.message)
-  //     }
-  //   )
-  //   //.catch(error => console.error("YourMOM"))
-  // }, []);
-  
+const App = () => {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-        <p>
-          Respond:{message || "MEOW"}
-        </p>
-        
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div data-theme="corporate"> 
+      <Routes>
+        <Route path="/" element={<PropertyPage />}/>
+        <Route path="/properties/:propertyId" element={<ApartmentPage />}/>
+        <Route path="/properties/:propertyId/apartments/:apartmentId" element={<TenantPage />}/>
+      </Routes>
+    </div>
   )
 }
 
