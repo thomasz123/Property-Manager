@@ -52,7 +52,6 @@ export async function updateProperty(req, res) {
     console.error("Error in updateProperty Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
-  res.json({ message: "Property info updated!" });
 }
 
 export async function addProperty(req, res) {

@@ -73,7 +73,6 @@ export async function updateApartment(req, res) {
     console.error("Error in updateApartment Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
-  res.json({ message: "Apartment info updated!" });
 }
 
 export async function addApartment(req, res) {
