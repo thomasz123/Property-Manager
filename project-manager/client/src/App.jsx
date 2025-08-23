@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router";
 import PropertyPage from "./pages/PropertyPage";
 import ApartmentPage from "./pages/ApartmentPage";
 import AddApartmentPage from "./pages/AddApartmentPage";
+import AddPropertyPage from "./pages/AddPropertyPage";
 import toast from "react-hot-toast";
 import "./index.css";
 import Navbar from "./components/Navbar";
@@ -19,6 +20,10 @@ const App = () => {
         <Route
           path="/:propertyId/addApartment"
           element={<AddApartmentPage />}
+        />
+        <Route
+          path="/addProperty"
+          element={<AddPropertyPage />}
         />
       </Routes>
     </div>

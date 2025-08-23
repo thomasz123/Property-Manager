@@ -1,60 +1,46 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import toast from "react-hot-toast"
+import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "lucide-react";
-import axios from "axios"
+import axios from "axios";
+import { formatDate } from "../lib/utils";
 
 const PORT = import.meta.env.VITE_PORT;
 
-
-const AddApartment = ({ propertyId }) => {
-  const [unit, setUnit] = useState("");
-  const [rent, setRent] = useState(0);
-  const [leaseStartDate, setLeaseStart] = useState("");
-  const [leaseEndDate, setLeaseEnd] = useState("");
-  const [notes, setNotes] = useState("");
+const EditApartment = ({ propertyId, apartment, onSuccess }) => {
+  const [unit, setUnit] = useState(apartment?.unit || "");
+  const [rent, setRent] = useState(apartment?.rent || 0);
+  const [leaseStartDate, setLeaseStart] = useState(
+    apartment?.leaseStartDate || ""
+  );
+  const [leaseEndDate, setLeaseEnd] = useState(apartment?.leaseEndDate || "");
+  const [notes, setNotes] = useState(apartment?.notes || "");
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if(!unit.trim()) {
-      toast.error("Unit field is required")
+
+    if (!unit.trim()) {
+      toast.error("Unit field is required");
       return;
     }
-    setLoading(true)
-    try {
-      await axios.post(`http://localhost:${PORT}/api/property/${propertyId}/apartment`, {
-        unit,
-        rent,
-        leaseStartDate,
-        leaseEndDate,
-        notes
-      })
-      toast.success("Apartment successfully added")
-      navigate(`/properties/${propertyId}`)
-    }
-    catch (error) {
-      console.log("Error creating apartment",error)
-      toast.error("Failed to add apartment!")
-    } finally{
-      setLoading(false)
-    }
+    setLoading(true);
+    await onSuccess({
+      unit: unit,
+      rent: rent,
+      leaseStartDate: leaseStartDate,
+      leaseEndDate: leaseEndDate,
+      notes: notes,
+    });
+    setLoading(false);
   };
   return (
-    <div className="min-h-screen bg-base-200">
-      <div className="container mx-auto px-4 py-8">
+    <div className="bg-white">
+      <div className="container mx-auto p-3">
         <div className="max-w-2xl mx-auto">
-          <Link to={`/properties/${propertyId}`} className="btn btn-ghost mb-6">
-            <ArrowLeftIcon className="size-5" />
-            Back to Apartments
-          </Link>
-
           <div className="card bg-base-100">
             <div className="card-body">
-              <h2 className="card-title text-2xl mb-4">Create New Apartment</h2>
+              <h2 className="card-title text-2xl mb-4">Edit Apartment</h2>
               <form onSubmit={handleSubmit}>
                 <div className="form-control mb-4">
                   <label className="label-text">
@@ -89,7 +75,7 @@ const AddApartment = ({ propertyId }) => {
                     <input
                       type="date"
                       className="input input-bordered"
-                      value={leaseStartDate}
+                      value={leaseStartDate.substring(0, 10)}
                       onChange={(e) => setLeaseStart(e.target.value)}
                     />
                   </div>
@@ -102,9 +88,9 @@ const AddApartment = ({ propertyId }) => {
                     <input
                       type="date"
                       className="input input-bordered"
-                      value={leaseEndDate}
+                      value={leaseEndDate.substring(0, 10)}
                       onChange={(e) => setLeaseEnd(e.target.value)}
-                      min={leaseStartDate}
+                      min={leaseStartDate.substring(0, 10)}
                     />
                   </div>
                 </div>
@@ -123,12 +109,15 @@ const AddApartment = ({ propertyId }) => {
                 </div>
                 {/* Divider */}
                 <div className="divider"></div>
-                <div className ="card-actions justify-end">
-                  <button type="submit" className="btn btn-primary" disabled={loading} >
-                  {loading ? "Creating..." :"Add Apartment"}
+                <div className="card-actions justify-end">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? "Modifying..." : "Edit Apartment"}
                   </button>
                 </div>
-
               </form>
             </div>
           </div>
@@ -138,4 +127,4 @@ const AddApartment = ({ propertyId }) => {
   );
 };
 
-export default AddApartment;
+export default EditApartment;

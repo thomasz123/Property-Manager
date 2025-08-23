@@ -35,12 +35,51 @@ const PropertyPage = () => {
     };
     fetchProperties();
   }, []);
+
+  const handleDeleteProperty = async (propertyId) => {
+    try {
+      if (!window.confirm("Are you sure you want to delete this property?")) {
+        return;
+      }
+      const propertyToDelete = properties.find(
+        (prop) => prop._id === propertyId
+      );
+      await axios.delete(
+        `http://localhost:${PORT}/api/property/${propertyId}/`
+      );
+
+      setProperties((prevProperties) =>
+        prevProperties.filter((prop) => prop._id !== propertyId)
+      );
+      toast.success(`Successfully deleted ${propertyToDelete.address}`);
+    } catch (error) {
+      console.log("Error deleting property", error);
+      toast.error("Error deleting property");
+    }
+  };
+
+  const handleEditProperty = async (propertyId, updatedFormData) => {
+    try {
+      const res = await axios.put(
+        `http://localhost:${PORT}/api/property/${propertyId}`,
+        updatedFormData
+      );
+      setProperties((prev) => prev.map((prop) => (prop._id === propertyId ? res.data : prop)));
+      toast.success("Property successfully modified");
+    } catch (error) {
+      console.log("Error modifying property", error);
+      toast.error("Failed to modify property!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Navbar />
-            <div className="flex justify-between items-center mb-6 p-5">
+      <div className="flex justify-between items-center mb-6 p-5">
         <h1 className="text-3xl font-bold">Properties:</h1>
-        <Link to={"/"} className="btn btn-primary rounded-full">
+        <Link to={"/addProperty"} className="btn btn-primary rounded-full">
           <PlusCircle className="w-5 h-5 mr-2" />
           Add Property
         </Link>
@@ -56,7 +95,11 @@ const PropertyPage = () => {
           <div className="grid grid-cols-1 md:grid-cols lg:grid-cols-3 gap-6">
             {properties.map((property) => (
               <div className="p-5" key={property._id}>
-                <PropertyCard property={property} />
+                <PropertyCard
+                  property={property}
+                  deletePropertyCard={handleDeleteProperty}
+                  editPropertyCard={handleEditProperty}
+                />
               </div>
             ))}
           </div>
