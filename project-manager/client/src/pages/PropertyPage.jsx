@@ -5,6 +5,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import RateLimitedUI from "../components/RateLimitedUI";
 import PropertyCard from "../components/PropertyCard";
+import { PlusCircle } from "lucide-react";
+import { Link } from "react-router";
 
 const PORT = import.meta.env.VITE_PORT;
 
@@ -36,6 +38,13 @@ const PropertyPage = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
+            <div className="flex justify-between items-center mb-6 p-5">
+        <h1 className="text-3xl font-bold">Properties:</h1>
+        <Link to={"/"} className="btn btn-primary rounded-full">
+          <PlusCircle className="w-5 h-5 mr-2" />
+          Add Property
+        </Link>
+      </div>
       {isRateLimited && <RateLimitedUI />}
       <div className="max-w-7xl mx-auto -p-4 mt-6">
         {isLoading && (

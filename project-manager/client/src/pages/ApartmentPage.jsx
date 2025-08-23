@@ -8,6 +8,7 @@ import { useParams } from "react-router";
 import ApartmentCard from "../components/ApartmentCard";
 import { Link } from "react-router";
 import AddApartment from "../components/AddApartment";
+import { PlusCircle } from "lucide-react";
 
 const PORT = import.meta.env.VITE_PORT;
 
@@ -43,7 +44,13 @@ const ApartmentPage = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <Link to={`/${propertyId}/addApartment`}>Add Apartment</Link>
+      <div className="flex justify-between items-center mb-6 p-5">
+        <h1 className="text-3xl font-bold">Apartments:</h1>
+        <Link to={`/${propertyId}/addApartment`} className="btn btn-primary rounded-full">
+          <PlusCircle className="w-5 h-5 mr-2" />
+          Add Apartment
+        </Link>
+      </div>
       {isRateLimited && <RateLimitedUI />}
       <div className="max-w-7xl mx-auto -p-4 mt-6">
         {isLoading && (
