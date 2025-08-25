@@ -54,8 +54,17 @@ export async function updateApartment(req, res) {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const { unit, leaseStartDate, leaseEndDate, rent, tenants, notes } =
-      req.body;
+    const {
+      unit,
+      leaseStartDate,
+      leaseEndDate,
+      rent,
+      tenants,
+      notes,
+      securityDeposit,
+      leaseType,
+      payments,
+    } = req.body;
     const apartment = await property.apartments.id(req.params.apartmentId);
     if (!apartment)
       return res.status(404).json({ message: "Apartment not found." });
@@ -66,6 +75,10 @@ export async function updateApartment(req, res) {
     if (leaseEndDate !== undefined) apartment.leaseEndDate = leaseEndDate;
     if (tenants !== undefined) apartment.tenants = tenants;
     if (notes !== undefined) apartment.notes = notes;
+    if (securityDeposit !== undefined)
+      apartment.securityDeposit = securityDeposit;
+    if (leaseType !== undefined) apartment.leaseType = leaseType;
+    if (payments !== undefined) apartment.payments = payments;
 
     await property.save();
     res.status(200).json(apartment);
@@ -81,16 +94,28 @@ export async function addApartment(req, res) {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const { unit, leaseStartDate, leaseEndDate, rent, tenants, notes } =
-      req.body;
-
-    const newApartment = property.apartments.push({
+    const {
       unit,
       leaseStartDate,
       leaseEndDate,
       rent,
       tenants,
       notes,
+      securityDeposit,
+      payments,
+      leaseType,
+    } = req.body;
+
+    const newApartment = property.apartments.push({
+      unit,
+      leaseStartDate,
+      leaseEndDate,
+      rent,
+      tenants: tenants ?? [],
+      notes,
+      securityDeposit,
+      payments,
+      leaseType,
     });
     const savedApartment = await property.save();
     res.status(201).json(savedApartment);

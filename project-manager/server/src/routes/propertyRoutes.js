@@ -16,7 +16,7 @@ router.put("/:propertyId", updateProperty);
 router.post("/", addProperty);
 router.delete("/:propertyId", deleteProperty);
 
-router.use("/:propertyId/apartment", apartmentRoutes);
+router.use("/:propertyId/apartments", apartmentRoutes);
 
 export default router;
 

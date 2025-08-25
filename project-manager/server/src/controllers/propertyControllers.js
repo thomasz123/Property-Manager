@@ -56,8 +56,8 @@ export async function updateProperty(req, res) {
 
 export async function addProperty(req, res) {
   try {
-    const { address } = req.body;
-    const newProperty = new Property({ address });
+    const { owner, address } = req.body;
+    const newProperty = new Property({ owner, address });
     const savedProperty = await newProperty.save();
     res.status(201).json(savedProperty);
   } catch (error) {

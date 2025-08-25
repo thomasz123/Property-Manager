@@ -18,7 +18,7 @@ const PropertyPage = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const res = await axios.get(`http://localhost:${PORT}/api/property/`);
+        const res = await axios.get(`http://localhost:${PORT}/api/properties/`);
         console.log(res.data);
         setProperties(res.data);
         setIsRateLimited(false);
@@ -45,7 +45,7 @@ const PropertyPage = () => {
         (prop) => prop._id === propertyId
       );
       await axios.delete(
-        `http://localhost:${PORT}/api/property/${propertyId}/`
+        `http://localhost:${PORT}/api/properties/${propertyId}/`
       );
 
       setProperties((prevProperties) =>
@@ -61,7 +61,7 @@ const PropertyPage = () => {
   const handleEditProperty = async (propertyId, updatedFormData) => {
     try {
       const res = await axios.put(
-        `http://localhost:${PORT}/api/property/${propertyId}`,
+        `http://localhost:${PORT}/api/properties/${propertyId}`,
         updatedFormData
       );
       setProperties((prev) => prev.map((prop) => (prop._id === propertyId ? res.data : prop)));

@@ -15,6 +15,10 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
   );
   const [leaseEndDate, setLeaseEnd] = useState(apartment?.leaseEndDate || "");
   const [notes, setNotes] = useState(apartment?.notes || "");
+  const [payments, setPayments] = useState(apartment?.payments || []);
+  const [leaseType, setLeaseType] = useState(apartment?.leaseType || "");
+  const [securityDeposit, setSecurityDeposit] = useState(apartment?.securityDeposit || 0);
+
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -31,6 +35,9 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
       leaseStartDate: leaseStartDate,
       leaseEndDate: leaseEndDate,
       notes: notes,
+      securityDeposit: securityDeposit,
+      payments: payments,
+      leaseType: leaseType,
     });
     setLoading(false);
   };
@@ -66,6 +73,30 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
                     onChange={(e) => setRent(e.target.value)}
                   ></input>
                 </div>
+                <div className="form-control mb-4">
+                  <label className="label-text">
+                    <span className="label-text">Security Deposit</span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Input Security Deposit..."
+                    className="input input-bordered"
+                    value={securityDeposit}
+                    onChange={(e) => setSecurityDeposit(e.target.value)}
+                  ></input>
+                </div>
+                <div className="form-control mb-4">
+                  <label className="label-text">
+                    <span className="label-text">Rent</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Input Lease Type..."
+                    className="input input-bordered"
+                    value={leaseType}
+                    onChange={(e) => setLeaseType(e.target.value)}
+                  ></input>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   {/* Lease Start Date */}
                   <div className="form-control">
@@ -75,7 +106,7 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
                     <input
                       type="date"
                       className="input input-bordered"
-                      value={leaseStartDate.substring(0, 10)}
+                      value={leaseStartDate}
                       onChange={(e) => setLeaseStart(e.target.value)}
                     />
                   </div>
@@ -88,9 +119,9 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
                     <input
                       type="date"
                       className="input input-bordered"
-                      value={leaseEndDate.substring(0, 10)}
+                      value={leaseEndDate}
                       onChange={(e) => setLeaseEnd(e.target.value)}
-                      min={leaseStartDate.substring(0, 10)}
+                      min={leaseStartDate}
                     />
                   </div>
                 </div>
@@ -109,13 +140,9 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
                 </div>
                 {/* Divider */}
                 <div className="divider"></div>
-                <div className="card-actions justify-end">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? "Modifying..." : "Edit Apartment"}
+                <div className ="card-actions justify-end">
+                  <button type="submit" className="btn btn-primary" disabled={loading} >
+                  {loading ? "Creating..." :"Add Apartment"}
                   </button>
                 </div>
               </form>

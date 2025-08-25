@@ -23,7 +23,7 @@ const ApartmentCard = ({
 
   return (
     <div className="card bg-base-100 hover:shadow-lg transition-all duration-200 border-t-4 border-solid border-[#000033]">
-      <Link to={`/properties/${propertyId}/apartments`}>
+      <Link to={`/properties/${propertyId}/apartments/${apartment._id}`}>
         <div className="card-body">
           <h3 className="card-title text-base-content">{apartment.unit}</h3>
           <h6 className="card-content">

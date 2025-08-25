@@ -2,7 +2,7 @@ import { Property } from "../models/Property.js";
 
 export async function addTenant(req, res) {
   try {
-    const { name, email, phone } = req.body;
+    const { name, email, phone , people} = req.body;
 
     const property = await Property.findById(req.params.propertyId);
     if (!property) {
@@ -14,7 +14,7 @@ export async function addTenant(req, res) {
       return res.status(404).json({ message: "Apartment not found" });
     }
 
-    const newTenant = { name, email, phone };
+    const newTenant = { name, email, phone, people};
 
     apartment.tenants.push(newTenant);
     await property.save();
@@ -56,7 +56,7 @@ export async function deleteTenant(req, res) {
 
 export async function updateTenant(req, res) {
   try {
-    const { name, email, phone } = req.body;
+    const { name, email, phone, people} = req.body;
     const property = await Property.findById(req.params.propertyId);
     if (!property) {
       return res.status(404).json({ message: "Property not found" });
@@ -75,6 +75,7 @@ export async function updateTenant(req, res) {
     if (name !== undefined) tenant.name = name;
     if (email !== undefined) tenant.email = email;
     if (phone !== undefined) tenant.phone = phone;
+    if (people !== undefined) tenant.people = people;
 
     await property.save();
     res.status(200).json(apartment);

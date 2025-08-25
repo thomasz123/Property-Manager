@@ -13,6 +13,9 @@ const AddApartment = ({ propertyId }) => {
   const [leaseStartDate, setLeaseStart] = useState("");
   const [leaseEndDate, setLeaseEnd] = useState("");
   const [notes, setNotes] = useState("");
+  const [payments, setPayments] = useState([]);
+  const [leaseType, setLeaseType] = useState("");
+  const [securityDeposit, setSecurityDeposit] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate()
@@ -26,12 +29,15 @@ const AddApartment = ({ propertyId }) => {
     }
     setLoading(true)
     try {
-      await axios.post(`http://localhost:${PORT}/api/property/${propertyId}/apartment`, {
+      await axios.post(`http://localhost:${PORT}/api/properties/${propertyId}/apartments`, {
         unit,
         rent,
         leaseStartDate,
         leaseEndDate,
-        notes
+        notes,
+        securityDeposit,
+        leaseType,
+        payments
       })
       toast.success("Apartment successfully added")
       navigate(`/properties/${propertyId}`)
@@ -78,6 +84,30 @@ const AddApartment = ({ propertyId }) => {
                     className="input input-bordered"
                     value={rent}
                     onChange={(e) => setRent(e.target.value)}
+                  ></input>
+                </div>
+                <div className="form-control mb-4">
+                  <label className="label-text">
+                    <span className="label-text">Security Deposit</span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Input Security Deposit..."
+                    className="input input-bordered"
+                    value={securityDeposit}
+                    onChange={(e) => setSecurityDeposit(e.target.value)}
+                  ></input>
+                </div>
+                <div className="form-control mb-4">
+                  <label className="label-text">
+                    <span className="label-text">Rent</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Input Lease Type..."
+                    className="input input-bordered"
+                    value={leaseType}
+                    onChange={(e) => setLeaseType(e.target.value)}
                   ></input>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

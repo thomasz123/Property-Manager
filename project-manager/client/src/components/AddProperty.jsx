@@ -8,6 +8,7 @@ const PORT = import.meta.env.VITE_PORT;
 
 const AddProperty = () => {
   const [address, setAddress] = useState("");
+  const [owner, setOwner] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -19,10 +20,12 @@ const AddProperty = () => {
       toast.error("Address field is required");
       return;
     }
+
     setLoading(true);
     try {
-      await axios.post(`http://localhost:${PORT}/api/property/`, {
+      await axios.post(`http://localhost:${PORT}/api/properties/`, {
         address,
+        owner
       });
       toast.success("Property successfully added");
       navigate("/");
@@ -56,6 +59,19 @@ const AddProperty = () => {
                     className="input input-bordered"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
+                  ></input>
+                </div>
+
+                <div className="form-control mb-4">
+                  <label className="label-text">
+                    <span className="label-text">Owner</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Input Owner..."
+                    className="input input-bordered"
+                    value={owner}
+                    onChange={(e) => setOwner(e.target.value)}
                   ></input>
                 </div>
 

@@ -22,7 +22,7 @@ const ApartmentPage = () => {
     const fetchApartments = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:${PORT}/api/property/${propertyId}`
+          `http://localhost:${PORT}/api/properties/${propertyId}`
         );
         console.log(res.data);
         setApartments(res.data.apartments);
@@ -50,7 +50,7 @@ const ApartmentPage = () => {
         (apartment) => apartment._id === apartmentId
       );
       await axios.delete(
-        `http://localhost:${PORT}/api/property/${propertyId}/apartment/${apartmentId}`
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`
       );
 
       setApartments((prevApartments) =>
@@ -66,7 +66,7 @@ const ApartmentPage = () => {
   const handleEditApartment = async (apartmentId, updatedFormData) => {
     try {
       const res = await axios.put(
-        `http://localhost:${PORT}/api/property/${propertyId}/apartment/${apartmentId}`,
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`,
         updatedFormData
       );
       setApartments((prev) => prev.map((apt) => (apt._id === apartmentId ? res.data : apt)));
