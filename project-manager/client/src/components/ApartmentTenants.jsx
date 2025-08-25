@@ -3,7 +3,7 @@ import { MailIcon, PhoneIcon, UsersIcon, PlusIcon } from "lucide-react";
 
 function ApartmentTenants({ apartment, onAddTenant }) {
   return (
-    <div className="text-sm">
+    <div className="text-lg">
       {apartment.tenants?.length > 0 ? (
         <div className="space-y-3">
           {apartment.tenants.map((tenant) => (

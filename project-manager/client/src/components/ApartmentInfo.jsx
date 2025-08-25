@@ -1,15 +1,19 @@
 import React from "react";
+import { formatDate } from "../lib/utils";
 
 const ApartmentInfo = ({ apartment }) => {
   return (
-    <div className="flex-col card bg-base-20 border border-solid border-[#000000] p-2">
-      <div>Rent: {apartment.rent}</div>
-      <div>Lease Start Date: {apartment.leaseStartDate}</div>
-      <div>Lease End Date: {apartment.leaseEndDate}</div>
-      <div>Security Deposit: {apartment.securityDeposit}</div>
-      <div>Lease Type: {apartment.leaseType}</div>
-      <div>Notes: {apartment.notes}</div>
-    </div>
+    <>
+      <h2 className="card-title text-xl font-bold"> Info: </h2>
+      <div className="text-lg">
+        <div>Rent: {apartment.rent}</div>
+        <div>Lease Start Date: {formatDate(new Date(apartment.leaseStartDate))}</div>
+        <div>Lease End Date: {formatDate(new Date(apartment.leaseEndDate))}</div>
+        <div>Security Deposit: {apartment.securityDeposit}</div>
+        <div>Lease Type: {apartment.leaseType}</div>
+        <div>Notes: {apartment.notes}</div>
+      </div> 
+    </>
   );
 };
 

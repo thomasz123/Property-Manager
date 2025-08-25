@@ -61,14 +61,16 @@ const ApartmentInfoPage = () => {
 
       {!isLoading && apartment && !isRateLimited && (
         <>
-          <div className="p-2 flex gap-4 max-h-[30vh]">
-            <div className="flex-1 rounded-box grid">
-              <ApartmentInfo apartment={apartment} />
+          <div className="p-2 flex gap-4">
+            <div className="card bg-base-100 border border-solid border-[#000033] p-4 flex-1 h-[35vh]">
+              <div className="overflow-y-auto">
+                <ApartmentInfo apartment={apartment} />
+              </div>
             </div>
 
-            <div className="card bg-base-100 border border-solid border-[#000033] p-4 flex-1 rounded-box grid">
+            <div className="card bg-base-100 border border-solid border-[#000033] p-4 flex-1 h-[35vh]">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="card-title text-lg font-bold">
+                <h2 className="card-title text-xl font-bold">
                   Tenants ({apartment.tenants?.length || 0})
                 </h2>
                 <button
@@ -84,11 +86,14 @@ const ApartmentInfoPage = () => {
             </div>
           </div>
 
-          <div className="p-2 flex gap-4">
-            <div className="flex-1 rounded-box grid">
+          <div className="w-screen px-2 mt-4">
+            <div className="border border-solid border-[#000033] rounded-box p-2">
               <ApartmentPayments apartment={apartment} />
             </div>
           </div>
+
+
+         
         </>
       )}
     </div>
