@@ -1,56 +1,165 @@
 import React from "react";
 import { formatDate, formatCurrency } from "../lib/utils";
+import { PlusIcon } from "lucide-react";
 
-const ApartmentPayments = ({apartment}) => {
+const ApartmentPayments = ({ apartment, leases }) => {
+  // Helper function to group payments by month
+  const groupPaymentsByMonth = (payments) => {
+    const grouped = {};
+
+    payments.forEach((payment) => {
+      const date = new Date(payment.date || payment.dateFor);
+      const monthKey = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
+      const monthName = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        timeZone: "UTC",
+      });
+
+      if (!grouped[monthKey]) {
+        grouped[monthKey] = {
+          monthName,
+          payments: [],
+        };
+      }
+      grouped[monthKey].payments.push(payment);
+    });
+
+    // Sort by month (newest first)
+    return Object.entries(grouped)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, value]) => value);
+  };
+
+  const calcExpectedRent = (leaseStartDate, leaseEndDate, rent) => {
+  // Validate inputs
+  if (!leaseStartDate || !leaseEndDate || !rent) {
+    return 5;
+  }
+  
+  const currentDate = new Date();
+  
+  // If lease hasn't started yet
+  if (leaseStartDate > currentDate) {
+    return 0;
+  }
+  
+  // Use the earlier of lease end date or current date
+  const calculationEndDate = leaseEndDate > currentDate ? currentDate : leaseEndDate;
+  
+  // Calculate month difference
+  const startYear = leaseStartDate.getFullYear();
+  const startMonth = leaseStartDate.getMonth();
+  const endYear = calculationEndDate.getFullYear();
+  const endMonth = calculationEndDate.getMonth();
+  
+  // Calculate total months (inclusive)
+  const monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+  
+  // Return total expected rent
+  return monthsDiff * rent;
+};
+
   return (
-    
-    <div className="text-lg">
+    <div className="text-lg space-y-4">
+      <div className = "flex justify-between items-center">
       <h2 className="card-title text-xl font-bold">
-                  Payments ({apartment.payments?.length || 0})
+        Payments ({leases?.length || 0} lease terms)
       </h2>
-      {apartment.payments?.length > 0 ? (
+      <button className="btn btn-primary btn-sm rounded-full">
+        <PlusIcon className="w-4 h-4" />
+      </button>
+      </div>
+      {leases?.length > 0 ? (
         <div className="space-y-3">
-          {apartment.payments.map((payment) => (
-            // <div key={payment._id} className="p-1 rounded-lg bg-base-200 border">
-            //   <div className="flex justify-between items-start mb-2">
-            //     <h3 className="font-medium">{formatDate(new Date(payment.datePaid))}</h3>
-            //   </div>
+          {leases.map((lease, leaseIndex) => {
+            const monthlyGroups = groupPaymentsByMonth(lease.payments);
 
-            //   <div className="flex flex-wrap gap-4 text-sm text-base-content/70">
-            //     {payment.amount && (
-            //       <div className="flex items-center gap-1">
-            //         <span>Amount Paid: {formatCurrency(payment.amount)}</span>
-            //       </div>
-            //     )}
-            //     {payment.currentRent && (
-            //       <div className="flex items-center gap-1">
-            //         <span> Current Rent: {formatCurrency(payment.currentRent)}</span>
-            //       </div>
-            //     )}
-            //   </div>
-            // </div>
-            <div className="collapse collapse-arrow bg-base-100 border border-base-300">
-              <input type="radio" name="my-accordion-2" defaultChecked />
-              <div className="collapse-title font-semibold">{formatDate(new Date(payment.datePaid))}</div>
-              <div className="collapse-content text-sm">
-                {payment.dateFor && (
-                  <div className="flex items-center gap-1">
-                    <span>Date For: {formatDate(new Date(payment.dateFor))}</span>
+            return (
+              <div
+                key={`${lease.leaseStart}-${leaseIndex}`}
+                className="collapse collapse-arrow bg-base-100 border border-base-300"
+              >
+                <input
+                  type="radio"
+                  name="lease-accordion"
+                  defaultChecked={leaseIndex === 0}
+                />
+
+                <div className="collapse-title font-semibold">
+                  <div className="flex justify-between items-center">
+                    <span>
+                      Lease: {formatDate(new Date(lease.leaseStart))} -{" "}
+                      {formatDate(new Date(lease.leaseEnd))}
+                    </span>
+                    <span className="text-sm font-normal">
+                      Total: {formatCurrency(lease.totalAmount)} / Expected:{" "}
+                      {formatCurrency(calcExpectedRent(new Date(lease.leaseStart), new Date(lease.leaseEnd), lease.currentRent))}
+                    </span>
                   </div>
-                )}
-                {payment.amount && (
-                  <div className="flex items-center gap-1">
-                    <span>Amount Paid: {formatCurrency(payment.amount)}</span>
+                </div>
+
+                <div className="collapse-content">
+                  <div className="space-y-4 pt-4">
+                    {monthlyGroups.map((monthGroup, monthIndex) => (
+                      <div
+                        key={`${monthGroup.monthName}-${monthIndex}`}
+                        className="border-l-2 border-base-300 pl-4"
+                      >
+                        <h3 className="font-semibold text-base mb-2">
+                          {monthGroup.monthName}
+                        </h3>
+
+                        <div className="space-y-2">
+                          {monthGroup.payments.map((payment) => (
+                            <div
+                              key={payment._id}
+                              className="bg-base-200 p-3 rounded-lg text-sm"
+                            >
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {payment.datePaid && (
+                                  <div>
+                                    <span className="font-medium">
+                                      Date Paid:{" "}
+                                    </span>
+                                    {formatDate(new Date(payment.datePaid))}
+                                  </div>
+                                )}
+
+                                <div>
+                                  <span className="font-medium">
+                                    Amount Paid:{" "}
+                                  </span>
+                                  <span
+                                    className={
+                                      payment.amount > 0
+                                        ? "text-success"
+                                        : "text-error"
+                                    }
+                                  >
+                                    {formatCurrency(payment.amount || 0)}
+                                  </span>
+                                </div>
+
+                                {lease.currentRent && (
+                                  <div>
+                                    <span className="font-medium">Rent: </span>
+                                    {formatCurrency(lease.currentRent)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-                {payment.currentRent && (
-                  <div className="flex items-center gap-1">
-                    <span> Current Rent: {formatCurrency(payment.currentRent)}</span>
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="alert">

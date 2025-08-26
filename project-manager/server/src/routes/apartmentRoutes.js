@@ -6,6 +6,7 @@ import {
   deleteApartment,
   addApartment,
   updateApartment,
+  getLeases,
 } from "../controllers/apartmentControllers.js";
 
 const router = express.Router({ mergeParams: true });
@@ -16,8 +17,9 @@ router.get("/:apartmentId", getApartment);
 router.put("/:apartmentId", updateApartment);
 router.post("/", addApartment);
 router.delete("/:apartmentId", deleteApartment);
+router.get("/:apartmentId/leases", getLeases);
 
-router.use("/:apartmentId/tenant", tenantRoutes)
+router.use("/:apartmentId/tenants", tenantRoutes)
 
 export default router;
 

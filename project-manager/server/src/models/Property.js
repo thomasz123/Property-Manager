@@ -25,6 +25,8 @@ const propertySchema = new mongoose.Schema(
             amount: Number,
             dateFor: Date,
             currentRent: Number,
+            leaseStart: Date,
+            leaseEnd: Date
           },
         ],
         tenants: [
@@ -32,7 +34,6 @@ const propertySchema = new mongoose.Schema(
             name: String,
             email: String,
             phone: String,
-            people: Number,
           },
         ],
       },

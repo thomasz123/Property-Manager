@@ -1,7 +1,13 @@
 import React from "react";
-import { MailIcon, PhoneIcon, UsersIcon, PlusIcon } from "lucide-react";
+import {
+  MailIcon,
+  PhoneIcon,
+  UsersIcon,
+  PlusIcon,
+  TrashIcon,
+} from "lucide-react";
 
-function ApartmentTenants({ apartment, onAddTenant }) {
+function ApartmentTenants({ apartment, handleDeleteTenant }) {
   return (
     <div className="text-lg">
       {apartment.tenants?.length > 0 ? (
@@ -25,6 +31,12 @@ function ApartmentTenants({ apartment, onAddTenant }) {
                     <span>{tenant.phone}</span>
                   </div>
                 )}
+                <button
+                  className="btn btn-ghost btn-xs text-error"
+                  onClick={() => handleDeleteTenant(tenant._id)}
+                >
+                  <TrashIcon className="size-6" />
+                </button>
               </div>
             </div>
           ))}

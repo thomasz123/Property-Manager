@@ -1,4 +1,5 @@
 import { Property } from "../models/Property.js";
+import mongoose from "mongoose"
 
 export async function getApartments(req, res) {
   try {
@@ -124,3 +125,42 @@ export async function addApartment(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+export async function getLeases (req, res) {
+  const paymentsByLease = await Property.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(req.params.propertyId) } },
+    { $unwind: "$apartments" },
+    { $match: { "apartments._id": new mongoose.Types.ObjectId(req.params.apartmentId) } },
+    { $unwind: "$apartments.payments" },
+    {
+      $group: {
+        _id: "$apartments.payments.leaseStart" ,
+        leaseEnd: {$first: "$apartments.payments.leaseEnd"},
+        payments: { 
+          $push: {
+            _id: "$apartments.payments._id",
+            amount: "$apartments.payments.amount",
+            dateFor: "$apartments.payments.dateFor",
+            datePaid: "$apartments.payments.datePaid",
+          }
+        },
+        currentRent: {$first: "$apartments.payments.currentRent"},
+        totalAmount: { $sum: "$apartments.payments.amount" },
+      }
+    },
+    { $sort: { _id: -1 } }, // Sort by year descending (newest first)
+    {
+      $project: {
+        _id: 0,
+        leaseStart: "$_id",
+        leaseEnd: 1,
+        currentRent: 1,
+        payments: 1,
+        totalAmount: 1,
+        totalExpected: 1,
+      }
+    }
+  ]);
+
+  res.json(paymentsByLease);
+};

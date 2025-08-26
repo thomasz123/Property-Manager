@@ -3,8 +3,7 @@ import { formatDate } from "../lib/utils";
 
 const ApartmentInfo = ({ apartment }) => {
   return (
-    <>
-      <h2 className="card-title text-xl font-bold"> Info: </h2>
+    <div>
       <div className="text-lg">
         <div>Rent: {apartment.rent}</div>
         <div>Lease Start Date: {formatDate(new Date(apartment.leaseStartDate))}</div>
@@ -13,7 +12,7 @@ const ApartmentInfo = ({ apartment }) => {
         <div>Lease Type: {apartment.leaseType}</div>
         <div>Notes: {apartment.notes}</div>
       </div> 
-    </>
+    </div>
   );
 };
 
