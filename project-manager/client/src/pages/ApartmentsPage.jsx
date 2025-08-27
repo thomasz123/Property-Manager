@@ -80,7 +80,7 @@ const ApartmentPage = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-y-auto [scrollbar-gutter:stable]">
       <Navbar />
       <div className="flex justify-between items-center mb-6 p-5">
         <h1 className="text-3xl font-bold">Apartments:</h1>

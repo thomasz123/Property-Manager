@@ -1,5 +1,5 @@
 import { Property } from "../models/Property.js";
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 export async function getApartments(req, res) {
   try {
@@ -126,27 +126,31 @@ export async function addApartment(req, res) {
   }
 }
 
-export async function getLeases (req, res) {
+export async function getLeases(req, res) {
   const paymentsByLease = await Property.aggregate([
     { $match: { _id: new mongoose.Types.ObjectId(req.params.propertyId) } },
     { $unwind: "$apartments" },
-    { $match: { "apartments._id": new mongoose.Types.ObjectId(req.params.apartmentId) } },
+    {
+      $match: {
+        "apartments._id": new mongoose.Types.ObjectId(req.params.apartmentId),
+      },
+    },
     { $unwind: "$apartments.payments" },
     {
       $group: {
-        _id: "$apartments.payments.leaseStart" ,
-        leaseEnd: {$first: "$apartments.payments.leaseEnd"},
-        payments: { 
+        _id: "$apartments.payments.leaseStart",
+        leaseEnd: { $first: "$apartments.payments.leaseEnd" },
+        payments: {
           $push: {
             _id: "$apartments.payments._id",
             amount: "$apartments.payments.amount",
             dateFor: "$apartments.payments.dateFor",
             datePaid: "$apartments.payments.datePaid",
-          }
+          },
         },
-        currentRent: {$first: "$apartments.payments.currentRent"},
+        currentRent: { $first: "$apartments.payments.currentRent" },
         totalAmount: { $sum: "$apartments.payments.amount" },
-      }
+      },
     },
     { $sort: { _id: -1 } }, // Sort by year descending (newest first)
     {
@@ -158,9 +162,33 @@ export async function getLeases (req, res) {
         payments: 1,
         totalAmount: 1,
         totalExpected: 1,
-      }
-    }
+      },
+    },
   ]);
 
   res.json(paymentsByLease);
-};
+}
+
+export async function deletePayment(req, res) {
+  try {
+    const property = await Property.findById(req.params.propertyId);
+    if (!property)
+      return res.status(404).json({ message: "Property not found" });
+
+    const apartment = await property.apartments.id(req.params.apartmentId);
+    if (!apartment)
+      return res.status(404).json({ message: "Apartment not found" });
+
+    const payment = await apartment.payments.id(req.params.paymentId);
+    if (!payment) return res.status(404).json({ message: "Payment not found" });
+
+    apartment.payments.pull(req.params.paymentId);
+    await property.save();
+    res.status(200).json(apartment);
+  } catch (error) {
+    console.error("Error in deletePayment Controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function addPayment(req, res) {}

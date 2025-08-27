@@ -29,6 +29,7 @@ const propertySchema = new mongoose.Schema(
             leaseEnd: Date
           },
         ],
+        
         tenants: [
           {
             name: String,

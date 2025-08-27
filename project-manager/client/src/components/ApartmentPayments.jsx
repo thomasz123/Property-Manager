@@ -1,8 +1,11 @@
 import React from "react";
 import { formatDate, formatCurrency } from "../lib/utils";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, TrashIcon } from "lucide-react";
+import { useRef } from "react";
+import AddPayment from "./AddPayment";
 
-const ApartmentPayments = ({ apartment, leases }) => {
+const ApartmentPayments = ({ apartment, leases, handleAddPayment, handleDeletePayment}) => {
+  const modalRef = useRef(null);
   // Helper function to group payments by month
   const groupPaymentsByMonth = (payments) => {
     const grouped = {};
@@ -34,44 +37,38 @@ const ApartmentPayments = ({ apartment, leases }) => {
   };
 
   const calcExpectedRent = (leaseStartDate, leaseEndDate, rent) => {
-  // Validate inputs
-  if (!leaseStartDate || !leaseEndDate || !rent) {
-    return 5;
-  }
-  
-  const currentDate = new Date();
-  
-  // If lease hasn't started yet
-  if (leaseStartDate > currentDate) {
-    return 0;
-  }
-  
-  // Use the earlier of lease end date or current date
-  const calculationEndDate = leaseEndDate > currentDate ? currentDate : leaseEndDate;
-  
-  // Calculate month difference
-  const startYear = leaseStartDate.getFullYear();
-  const startMonth = leaseStartDate.getMonth();
-  const endYear = calculationEndDate.getFullYear();
-  const endMonth = calculationEndDate.getMonth();
-  
-  // Calculate total months (inclusive)
-  const monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
-  
-  // Return total expected rent
-  return monthsDiff * rent;
-};
+    // Validate inputs
+    if (!leaseStartDate || !leaseEndDate || !rent) {
+      return 5;
+    }
+
+    const currentDate = new Date();
+
+    // If lease hasn't started yet
+    if (leaseStartDate > currentDate) {
+      return 0;
+    }
+
+    // Use the earlier of lease end date or current date
+    const calculationEndDate =
+      leaseEndDate > currentDate ? currentDate : leaseEndDate;
+
+    // Calculate month difference
+    const startYear = leaseStartDate.getFullYear();
+    const startMonth = leaseStartDate.getMonth();
+    const endYear = calculationEndDate.getFullYear();
+    const endMonth = calculationEndDate.getMonth();
+
+    // Calculate total months (inclusive)
+    let monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
+    if (monthsDiff === 0) monthsDiff = 1;
+    // Return total expected rent
+    return monthsDiff * rent;
+  };
 
   return (
     <div className="text-lg space-y-4">
-      <div className = "flex justify-between items-center">
-      <h2 className="card-title text-xl font-bold">
-        Payments ({leases?.length || 0} lease terms)
-      </h2>
-      <button className="btn btn-primary btn-sm rounded-full">
-        <PlusIcon className="w-4 h-4" />
-      </button>
-      </div>
+      
       {leases?.length > 0 ? (
         <div className="space-y-3">
           {leases.map((lease, leaseIndex) => {
@@ -83,7 +80,7 @@ const ApartmentPayments = ({ apartment, leases }) => {
                 className="collapse collapse-arrow bg-base-100 border border-base-300"
               >
                 <input
-                  type="radio"
+                  type="checkbox"
                   name="lease-accordion"
                   defaultChecked={leaseIndex === 0}
                 />
@@ -96,7 +93,13 @@ const ApartmentPayments = ({ apartment, leases }) => {
                     </span>
                     <span className="text-sm font-normal">
                       Total: {formatCurrency(lease.totalAmount)} / Expected:{" "}
-                      {formatCurrency(calcExpectedRent(new Date(lease.leaseStart), new Date(lease.leaseEnd), lease.currentRent))}
+                      {formatCurrency(
+                        calcExpectedRent(
+                          new Date(lease.leaseStart),
+                          new Date(lease.leaseEnd),
+                          lease.currentRent
+                        )
+                      )}
                     </span>
                   </div>
                 </div>
@@ -108,8 +111,22 @@ const ApartmentPayments = ({ apartment, leases }) => {
                         key={`${monthGroup.monthName}-${monthIndex}`}
                         className="border-l-2 border-base-300 pl-4"
                       >
-                        <h3 className="font-semibold text-base mb-2">
+                        <h3 className="flex font-semibold text-base mb-2 justify-between">
                           {monthGroup.monthName}
+                          {lease.currentRent && (
+                            <div>
+                              <span className="text-sm">
+                                Paid:{" "}
+                                {formatCurrency(
+                                  monthlyGroups[monthIndex].payments.reduce(
+                                    (acc, current) => acc + current.amount,
+                                    0
+                                  )
+                                )}{" "}
+                                / Expected: {formatCurrency(lease.currentRent)}
+                              </span>
+                            </div>
+                          )}
                         </h3>
 
                         <div className="space-y-2">
@@ -118,9 +135,9 @@ const ApartmentPayments = ({ apartment, leases }) => {
                               key={payment._id}
                               className="bg-base-200 p-3 rounded-lg text-sm"
                             >
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div className="grid grid-cols-3 items-center gap-2">
                                 {payment.datePaid && (
-                                  <div>
+                                  <div className="justify-self-start">
                                     <span className="font-medium">
                                       Date Paid:{" "}
                                     </span>
@@ -128,7 +145,7 @@ const ApartmentPayments = ({ apartment, leases }) => {
                                   </div>
                                 )}
 
-                                <div>
+                                <div className="justify-self-center">
                                   <span className="font-medium">
                                     Amount Paid:{" "}
                                   </span>
@@ -143,12 +160,11 @@ const ApartmentPayments = ({ apartment, leases }) => {
                                   </span>
                                 </div>
 
-                                {lease.currentRent && (
-                                  <div>
-                                    <span className="font-medium">Rent: </span>
-                                    {formatCurrency(lease.currentRent)}
-                                  </div>
-                                )}
+                                <div className="justify-self-end">
+                                  <button onClick={() => handleDeletePayment(payment._id)}>
+                                    <TrashIcon />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
