@@ -5,7 +5,6 @@ import { useRef } from "react";
 import AddPayment from "./AddPayment";
 
 const ApartmentPayments = ({ apartment, leases, handleAddPayment, handleDeletePayment}) => {
-  const modalRef = useRef(null);
   // Helper function to group payments by month
   const groupPaymentsByMonth = (payments) => {
     const grouped = {};

@@ -12,24 +12,24 @@ const propertySchema = new mongoose.Schema(
     apartments: [
       {
         unit: String,
-        rent: Number,
-        leaseStartDate: Date,
-        leaseEndDate: Date,
-        securityDeposit: Number,
         notes: String,
-        leaseType: String,
-        
-        payments: [
+        leases: [
           {
-            datePaid: Date,
-            amount: Number,
-            dateFor: Date,
-            currentRent: Number,
-            leaseStart: Date,
-            leaseEnd: Date
+            payments: [
+              {
+                amount: Number,
+                datePaid: Date,
+                dateFor: Date,
+              },
+            ],
+            rent: Number,
+            leaseStartDate: Date,
+            leaseEndDate: Date,
+            securityDeposit: Number,
+            leaseType: String,
           },
         ],
-        
+
         tenants: [
           {
             name: String,

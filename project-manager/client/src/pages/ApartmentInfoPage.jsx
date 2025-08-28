@@ -28,18 +28,30 @@ const ApartmentInfoPage = () => {
     tenantModalRef.current?.showModal();
   };
 
-  const closeTenantModal = (tenantFormData) => {
+  const closeTenantModal = () => {
     tenantModalRef.current?.close();
-    handleAddTenant(tenantFormData);
   };
 
   const openPaymentModal = () => {
     paymentModalRef.current?.showModal();
   };
 
-  const closePaymentModal = (paymentFormData) => {
-    paymentFormData.current?.close();
-    handleAddPayment(paymentFormData);
+  const closePaymentModal = () => {
+    paymentModalRef.current?.close();
+  };
+  const monthsDict = {
+    January: 0,
+    February: 1,
+    March: 2,
+    April: 3,
+    May: 4,
+    June: 5,
+    July: 6,
+    August: 7,
+    September: 8,
+    October: 9,
+    November: 10,
+    December: 11,
   };
 
   const handleAddTenant = async (tenantFormData) => {
@@ -51,6 +63,7 @@ const ApartmentInfoPage = () => {
 
       // Add the new tenant to the apartment.tenants array
       setApartment(res.data);
+      closeTenantModal();
       toast.success("Added tenant successfully");
     } catch (error) {
       console.log("Error adding tenant", error);
@@ -87,9 +100,6 @@ const ApartmentInfoPage = () => {
       if (!window.confirm("Are you sure you want to delete this payment?")) {
         return;
       }
-      const paymentToDelete = apartment.payments.find(
-        (payment) => payment._id === paymentId
-      );
       const res = await axios.delete(
         `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/payments/${paymentId}`
       );
@@ -101,6 +111,7 @@ const ApartmentInfoPage = () => {
           ),
         }))
       );
+      setApartment(res.data)
       toast.success(`Successfully deleted payment`);
     } catch (error) {
       console.log("Error deleting payment", error);
@@ -110,13 +121,24 @@ const ApartmentInfoPage = () => {
 
   const handleAddPayment = async (paymentFormData) => {
     try {
-      const res = await axios.post(
-        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/tenants`,
-        paymentFormData
-      );
+      console.log("hullo");
+      const parsedFormData = {
+        ...paymentFormData,
+        dateFor: new Date(2025, monthsDict[paymentFormData.dateFor], 1),
+        currentRent: apartment.rent,
+        leaseStart: new Date(apartment.leaseStartDate),
+        leaseEnd: new Date(apartment.leaseEndDate)
+      };
 
+      const res = await axios.post(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/payments`,
+        parsedFormData
+      );
+      console.log(res.data);
       // Add the new tenant to the apartment.tenants array
       setApartment(res.data);
+      
+      closePaymentModal();
       toast.success("Added payment successfully");
     } catch (error) {
       console.log("Error adding payment", error);
@@ -223,7 +245,7 @@ const ApartmentInfoPage = () => {
                           ✕
                         </button>
                       </form>
-                      <AddTenant onSuccess={closeTenantModal} />
+                      <AddTenant onSuccess={handleAddTenant} />
                     </div>
                   </dialog>
                 </div>
@@ -232,34 +254,36 @@ const ApartmentInfoPage = () => {
                 <ApartmentTenants
                   apartment={apartment}
                   handleDeleteTenant={handleDeleteTenant}
-                  handleAddPayment={closePaymentModal}
+                  handleAddTenant={closeTenantModal}
                 />
               </div>
             </div>
           </div>
 
           <div className="w-full px-2 mt-4">
-            
             <div className="border border-solid border-[#000033] rounded-box p-6">
-            <div className="flex justify-between items-center ">
-              <h2 className="card-title text-xl font-bold">
-                Payments ({leases?.length || 0} lease terms)
-              </h2>
-              <button className="btn btn-primary btn-sm rounded-full" onClick={openPaymentModal}>
-                <PlusIcon className="w-4 h-4" />
-              </button>
-              <dialog ref={paymentModalRef} id="my_modal_3" className="modal">
-                <div className="modal-box">
-                  <form method="dialog">
-                    {/* if there is a button in form, it will close the modal */}
-                    <button className="btn btn-xs btn-circle btn-ghost absolute right-2 top-2">
-                      ✕
-                    </button>
-                  </form>
-                  <AddPayment onSuccess={closePaymentModal} />
-                </div>
-              </dialog>
-            </div>
+              <div className="flex justify-between items-center ">
+                <h2 className="card-title text-xl font-bold">
+                  Payments ({leases?.length || 0} lease terms)
+                </h2>
+                <button
+                  className="btn btn-primary btn-sm rounded-full"
+                  onClick={openPaymentModal}
+                >
+                  <PlusIcon className="w-4 h-4" />
+                </button>
+                <dialog ref={paymentModalRef} id="my_modal_3" className="modal">
+                  <div className="modal-box">
+                    <form method="dialog">
+                      {/* if there is a button in form, it will close the modal */}
+                      <button className="btn btn-xs btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
+                      </button>
+                    </form>
+                    <AddPayment onSuccess={handleAddPayment} />
+                  </div>
+                </dialog>
+              </div>
               <ApartmentPayments
                 apartment={apartment}
                 leases={leases}

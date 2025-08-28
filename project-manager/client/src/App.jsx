@@ -6,6 +6,7 @@ import AddPropertyPage from "./pages/AddPropertyPage";
 import "./index.css";
 import Navbar from "./components/Navbar";
 import ApartmentInfoPage from "./pages/ApartmentInfoPage";
+import LoginPage from "./pages/LoginPage";
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
           path="/properties/:propertyId/apartments/:apartmentId"
           element={<ApartmentInfoPage />}
         />
+        <Route path="/login" element={<LoginPage/>} />
       </Routes>
     </div>
   );

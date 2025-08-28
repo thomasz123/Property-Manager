@@ -183,12 +183,39 @@ export async function deletePayment(req, res) {
     if (!payment) return res.status(404).json({ message: "Payment not found" });
 
     apartment.payments.pull(req.params.paymentId);
-    await property.save();
-    res.status(200).json(apartment);
+    const savedProperty = await property.save();
+    
+    // Get the updated apartment from the saved property
+    const updatedApartment = savedProperty.apartments.id(req.params.apartmentId);
+    res.status(200).json(updatedApartment);
   } catch (error) {
     console.error("Error in deletePayment Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-export async function addPayment(req, res) {}
+export async function addPayment(req, res) {
+  try {
+    const property = await Property.findById(req.params.propertyId);
+    if (!property)
+      return res.status(404).json({ message: "Property not found" });
+
+    const apartment = await property.apartments.id(req.params.apartmentId);
+    if (!apartment)
+      return res.status(404).json({ message: "Apartment not found" });
+
+    const { amount, dateFor, datePaid, currentRent, leaseStart, leaseEnd } = req.body;
+
+    const newPayment = { amount, dateFor, datePaid, currentRent, leaseStart, leaseEnd };
+
+    apartment.payments.push(newPayment);
+
+    await property.save();
+
+    // const addedTenant = apartment.tenants[apartment.tenants.length - 1];
+    res.status(201).json(apartment);
+  } catch (error) {
+    console.error("Error in addPayment Controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}

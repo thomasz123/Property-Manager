@@ -21,6 +21,9 @@ const AddTenant = ({ onSuccess }) => {
       email: email,
       phone: phone,
     });
+    setName("")
+    setEmail("")
+    setPhone("")
     setLoading(false);
   };
 
