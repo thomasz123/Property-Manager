@@ -27,7 +27,7 @@ export async function deleteProperty(req, res) {
     const deletedProperty = await Property.findByIdAndDelete(
       req.params.propertyId
     );
-    if (!deleteProperty)
+    if (!deletedProperty)
       return res.status(404).json({ message: "Property not found" });
     const properties = await Property.find();
     res.json(properties);

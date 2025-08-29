@@ -1,5 +1,5 @@
 import express from "express";
-import tenantRoutes from "./tenantRoutes.js"
+import tenantRoutes from "./tenantRoutes.js";
 import {
   getApartment,
   getApartments,
@@ -7,24 +7,34 @@ import {
   addApartment,
   updateApartment,
   getLeases,
+  addLease,
+  deleteLease,
+  getPayments,
   addPayment,
-  deletePayment
+  deletePayment,
 } from "../controllers/apartmentControllers.js";
 
 const router = express.Router({ mergeParams: true });
 
-
+// ----- Apartments -----
 router.get("/", getApartments);
+router.post("/", addApartment);
+
 router.get("/:apartmentId", getApartment);
 router.put("/:apartmentId", updateApartment);
-router.post("/", addApartment);
 router.delete("/:apartmentId", deleteApartment);
-router.get("/:apartmentId/leases", getLeases);
-router.delete("/:apartmentId/payments/:paymentId", deletePayment);
-router.post("/:apartmentId/payments", addPayment);
 
-router.use("/:apartmentId/tenants", tenantRoutes)
+// ----- Leases -----
+router.get("/:apartmentId/leases", getLeases);
+router.post("/:apartmentId/leases", addLease);
+router.delete("/:apartmentId/leases/:leaseId", deleteLease)
+
+// ----- Payments (nested under leases) -----
+router.get("/:apartmentId/leases/:leaseId/payments", getPayments);
+router.post("/:apartmentId/leases/:leaseId/payments", addPayment);
+router.delete("/:apartmentId/leases/:leaseId/payments/:paymentId", deletePayment);
+
+// ----- Tenants -----
+router.use("/:apartmentId/tenants", tenantRoutes);
 
 export default router;
-
-// add statuses later

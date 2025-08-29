@@ -1,13 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import RateLimitedUI from "../components/RateLimitedUI";
-import { useParams } from "react-router";
+import { useParams, Link } from "react-router";
 import ApartmentCard from "../components/ApartmentCard";
-import { Link } from "react-router";
-import AddApartment from "../components/AddApartment";
 import { PlusCircle } from "lucide-react";
 
 const PORT = import.meta.env.VITE_PORT;
@@ -16,7 +13,7 @@ const ApartmentPage = () => {
   const { propertyId } = useParams();
   const [apartments, setApartments] = useState([]);
   const [isRateLimited, setIsRateLimited] = useState(false);
-  const [isLoading, setLoading] = useState(false);
+  const [isLoading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchApartments = async () => {
@@ -24,8 +21,7 @@ const ApartmentPage = () => {
         const res = await axios.get(
           `http://localhost:${PORT}/api/properties/${propertyId}`
         );
-        console.log(res.data);
-        setApartments(res.data.apartments);
+        setApartments(res.data.apartments || []);
         setIsRateLimited(false);
       } catch (error) {
         console.error("Error fetching apartments", error.response);
@@ -39,7 +35,7 @@ const ApartmentPage = () => {
       }
     };
     fetchApartments();
-  }, []);
+  }, [propertyId]);
 
   const handleDeleteApartment = async (propertyId, apartmentId) => {
     try {
@@ -69,7 +65,9 @@ const ApartmentPage = () => {
         `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`,
         updatedFormData
       );
-      setApartments((prev) => prev.map((apt) => (apt._id === apartmentId ? res.data : apt)));
+      setApartments((prev) =>
+        prev.map((apt) => (apt._id === apartmentId ? res.data : apt))
+      );
       toast.success("Apartment successfully modified");
     } catch (error) {
       console.log("Error modifying apartment", error);
@@ -78,6 +76,8 @@ const ApartmentPage = () => {
       setLoading(false);
     }
   };
+
+
 
   return (
     <div className="min-h-screen overflow-y-auto [scrollbar-gutter:stable]">
@@ -92,15 +92,18 @@ const ApartmentPage = () => {
           Add Apartment
         </Link>
       </div>
+
       {isRateLimited && <RateLimitedUI />}
-      <div className="max-w-7xl mx-auto -p-4 mt-6">
+
+      <div className="max-w-7xl mx-auto px-4 mt-6">
         {isLoading && (
           <div className="text-center text-primary py-10">
-            Loading Apartments
+            Loading Apartments...
           </div>
         )}
+
         {apartments.length > 0 && !isRateLimited && (
-          <div className="grid grid-cols-1 md:grid-cols lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {apartments.map((apartment) => (
               <div className="p-5" key={apartment._id}>
                 <ApartmentCard
@@ -108,6 +111,7 @@ const ApartmentPage = () => {
                   apartment={apartment}
                   deleteApartmentCard={handleDeleteApartment}
                   editApartmentCard={handleEditApartment}
+                   // async issue here
                 />
               </div>
             ))}

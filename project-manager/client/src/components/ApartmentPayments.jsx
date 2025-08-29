@@ -1,16 +1,28 @@
-import React from "react";
+import React, { useRef } from "react";
 import { formatDate, formatCurrency } from "../lib/utils";
-import { PlusIcon, TrashIcon } from "lucide-react";
-import { useRef } from "react";
+import { TrashIcon } from "lucide-react";
+import AddLease from "./AddLease";
 import AddPayment from "./AddPayment";
 
-const ApartmentPayments = ({ apartment, leases, handleAddPayment, handleDeletePayment}) => {
-  // Helper function to group payments by month
+const ApartmentPayments = ({
+  apartment,
+  leases,
+  handleAddPayment,
+  handleDeletePayment,
+  handleDeleteLease,
+  handleAddLease,
+}) => {
+  const leaseModalRef = useRef(null);
+  const paymentModalRef = useRef(null);
+
+  const openLeaseModal = () => leaseModalRef.current.showModal();
+  const openPaymentModal = () => paymentModalRef.current.showModal();
+
   const groupPaymentsByMonth = (payments) => {
     const grouped = {};
-
     payments.forEach((payment) => {
-      const date = new Date(payment.date || payment.dateFor);
+      if (!payment.dateFor) return;
+      const date = new Date(payment.dateFor);
       const monthKey = `${date.getFullYear()}-${String(
         date.getMonth() + 1
       ).padStart(2, "0")}`;
@@ -20,114 +32,140 @@ const ApartmentPayments = ({ apartment, leases, handleAddPayment, handleDeletePa
         timeZone: "UTC",
       });
 
-      if (!grouped[monthKey]) {
-        grouped[monthKey] = {
-          monthName,
-          payments: [],
-        };
-      }
+      if (!grouped[monthKey]) grouped[monthKey] = { monthName, payments: [] };
       grouped[monthKey].payments.push(payment);
     });
 
-    // Sort by month (newest first)
     return Object.entries(grouped)
       .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([key, value]) => value);
+      .map(([_, value]) => value);
   };
 
   const calcExpectedRent = (leaseStartDate, leaseEndDate, rent) => {
-    // Validate inputs
-    if (!leaseStartDate || !leaseEndDate || !rent) {
-      return 5;
-    }
+    if (!leaseStartDate || !leaseEndDate || !rent) return 0;
 
     const currentDate = new Date();
+    const start = new Date(leaseStartDate);
+    const end = new Date(leaseEndDate);
+    if (start > currentDate) return 0;
+    const calculationEndDate = end > currentDate ? currentDate : end;
 
-    // If lease hasn't started yet
-    if (leaseStartDate > currentDate) {
-      return 0;
-    }
-
-    // Use the earlier of lease end date or current date
-    const calculationEndDate =
-      leaseEndDate > currentDate ? currentDate : leaseEndDate;
-
-    // Calculate month difference
-    const startYear = leaseStartDate.getFullYear();
-    const startMonth = leaseStartDate.getMonth();
-    const endYear = calculationEndDate.getFullYear();
-    const endMonth = calculationEndDate.getMonth();
-
-    // Calculate total months (inclusive)
-    let monthsDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
-    if (monthsDiff === 0) monthsDiff = 1;
-    // Return total expected rent
+    let monthsDiff =
+      (calculationEndDate.getFullYear() - start.getFullYear()) * 12 +
+      (calculationEndDate.getMonth() - start.getMonth()) +
+      1;
     return monthsDiff * rent;
   };
 
   return (
-    <div className="text-lg space-y-4">
-      
+    <div className="text-lg space-y-6">
+      {/* Header with Add Lease and Add Payment buttons */}
+      <div className="flex justify-between items-center mb-4 gap-2">
+        <h2 className="card-title text-xl font-bold">
+          Leases ({leases?.length || 0} terms)
+        </h2>
+        <div className="justify-end">
+          <button
+            className="btn btn-xs btn-success mr-2"
+            onClick={openPaymentModal}
+          >
+            Add Payment
+          </button>
+
+          <button className="btn btn-xs btn-primary" onClick={openLeaseModal}>
+            Add Lease
+          </button>
+        </div>
+        {/* Lease Modal */}
+        <dialog ref={leaseModalRef} className="modal">
+          <div className="modal-box">
+            <form method="dialog">
+              <button className="btn btn-xs btn-circle btn-ghost absolute right-2 top-2">
+                ✕
+              </button>
+            </form>
+            <AddLease onSuccess={handleAddLease} />
+          </div>
+        </dialog>
+
+        {/* Payment Modal */}
+        <dialog ref={paymentModalRef} className="modal">
+          <div className="modal-box">
+            <form method="dialog">
+              <button className="btn btn-xs btn-circle btn-ghost absolute right-2 top-2">
+                ✕
+              </button>
+            </form>
+            <AddPayment onSuccess={handleAddPayment} leases={leases} />
+          </div>
+        </dialog>
+      </div>
+      {/* Loop through leases */}
       {leases?.length > 0 ? (
-        <div className="space-y-3">
-          {leases.map((lease, leaseIndex) => {
+        <div className="space-y-4">
+          {leases.map((lease) => {
             const monthlyGroups = groupPaymentsByMonth(lease.payments);
 
             return (
               <div
-                key={`${lease.leaseStart}-${leaseIndex}`}
-                className="collapse collapse-arrow bg-base-100 border border-base-300"
+                key={lease._id}
+                className="border border-base-300 rounded-lg p-4 bg-base-100"
               >
-                <input
-                  type="checkbox"
-                  name="lease-accordion"
-                  defaultChecked={leaseIndex === 0}
-                />
-
-                <div className="collapse-title font-semibold">
-                  <div className="flex justify-between items-center">
-                    <span>
-                      Lease: {formatDate(new Date(lease.leaseStart))} -{" "}
-                      {formatDate(new Date(lease.leaseEnd))}
-                    </span>
+                {/* Lease Header */}
+                <div className="flex justify-between items-center">
+                  <span className="font-bold">
+                    Lease: {formatDate(new Date(lease.leaseStartDate))} -{" "}
+                    {formatDate(new Date(lease.leaseEndDate))}
+                  </span>
+                  <div className="flex gap-2 items-center">
                     <span className="text-sm font-normal">
-                      Total: {formatCurrency(lease.totalAmount)} / Expected:{" "}
+                      Total Paid:{" "}
+                      {formatCurrency(
+                        lease.payments.reduce(
+                          (acc, p) => acc + (p.amount || 0),
+                          0
+                        )
+                      )}{" "}
+                      / Expected:{" "}
                       {formatCurrency(
                         calcExpectedRent(
-                          new Date(lease.leaseStart),
-                          new Date(lease.leaseEnd),
-                          lease.currentRent
+                          lease.leaseStartDate,
+                          lease.leaseEndDate,
+                          lease.rent
                         )
                       )}
                     </span>
+                    <button
+                      onClick={() => handleDeleteLease(lease._id)}
+                      className="btn btn-xs btn-error"
+                    >
+                      Delete Lease
+                    </button>
                   </div>
                 </div>
+                <div className="text-sm mb-1">
+                  <span className="mr-6">
+                    <b>Security Deposit:</b> {lease.securityDeposit}
+                  </span>
+                  <span className="mr-6">
+                    <b>Monthly Rent:</b> {lease.rent}
+                  </span>
+                  <span>
+                    <b>Lease Type:</b> {lease.leaseType}
+                  </span>
+                </div>
 
-                <div className="collapse-content">
-                  <div className="space-y-4 pt-4">
-                    {monthlyGroups.map((monthGroup, monthIndex) => (
+                {/* Payments inside lease */}
+                {monthlyGroups.length > 0 ? (
+                  <div className="space-y-4">
+                    {monthlyGroups.map((monthGroup) => (
                       <div
-                        key={`${monthGroup.monthName}-${monthIndex}`}
+                        key={monthGroup.monthName}
                         className="border-l-2 border-base-300 pl-4"
                       >
-                        <h3 className="flex font-semibold text-base mb-2 justify-between">
+                        <h3 className="font-semibold text-base mb-2">
                           {monthGroup.monthName}
-                          {lease.currentRent && (
-                            <div>
-                              <span className="text-sm">
-                                Paid:{" "}
-                                {formatCurrency(
-                                  monthlyGroups[monthIndex].payments.reduce(
-                                    (acc, current) => acc + current.amount,
-                                    0
-                                  )
-                                )}{" "}
-                                / Expected: {formatCurrency(lease.currentRent)}
-                              </span>
-                            </div>
-                          )}
                         </h3>
-
                         <div className="space-y-2">
                           {monthGroup.payments.map((payment) => (
                             <div
@@ -135,15 +173,14 @@ const ApartmentPayments = ({ apartment, leases, handleAddPayment, handleDeletePa
                               className="bg-base-200 p-3 rounded-lg text-sm"
                             >
                               <div className="grid grid-cols-3 items-center gap-2">
-                                {payment.datePaid && (
-                                  <div className="justify-self-start">
-                                    <span className="font-medium">
-                                      Date Paid:{" "}
-                                    </span>
-                                    {formatDate(new Date(payment.datePaid))}
-                                  </div>
-                                )}
-
+                                <div className="justify-self-start">
+                                  <span className="font-medium">
+                                    Date Paid:{" "}
+                                  </span>
+                                  {payment.datePaid
+                                    ? formatDate(new Date(payment.datePaid))
+                                    : "—"}
+                                </div>
                                 <div className="justify-self-center">
                                   <span className="font-medium">
                                     Amount Paid:{" "}
@@ -158,10 +195,17 @@ const ApartmentPayments = ({ apartment, leases, handleAddPayment, handleDeletePa
                                     {formatCurrency(payment.amount || 0)}
                                   </span>
                                 </div>
-
                                 <div className="justify-self-end">
-                                  <button onClick={() => handleDeletePayment(payment._id)}>
-                                    <TrashIcon />
+                                  <button
+                                    onClick={() =>
+                                      handleDeletePayment(
+                                        lease._id,
+                                        payment._id
+                                      )
+                                    }
+                                    className="btn btn-xs"
+                                  >
+                                    <TrashIcon className="text-error" />
                                   </button>
                                 </div>
                               </div>
@@ -171,14 +215,18 @@ const ApartmentPayments = ({ apartment, leases, handleAddPayment, handleDeletePa
                       </div>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-sm italic text-gray-500">
+                    No payments for this lease.
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       ) : (
         <div className="alert">
-          <span>No payments found.</span>
+          <span>No leases found.</span>
         </div>
       )}
     </div>

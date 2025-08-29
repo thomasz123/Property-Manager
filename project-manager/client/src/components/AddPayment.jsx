@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { formatDate } from "../lib/utils";
 
-const AddPayment = ({ onSuccess }) => {
+const AddPayment = ({ onSuccess, leases }) => {
   const [leaseTerm, setLeaseTerm] = useState("");
   const [amount, setAmount] = useState(0);
   const [datePaid, setDatePaid] = useState("");
@@ -29,7 +30,7 @@ const AddPayment = ({ onSuccess }) => {
     setLoading(true);
     try {
       await onSuccess({
-        // leaseTerm,
+        leaseId: leaseTerm,
         amount: amount,
         datePaid: datePaid,
         dateFor: monthPaidFor,
@@ -49,33 +50,41 @@ const AddPayment = ({ onSuccess }) => {
             <div className="card-body">
               <h2 className="card-title text-2xl mb-4">Add Payment</h2>
               <form onSubmit={handleSubmit}>
-                {/* Date Paid For */}
+                {/* Lease Term */}
                 <div className="form-control mb-4">
                   <label className="label">
                     <span className="label-text">Select Lease Term</span>
                   </label>
-                  <select className="select w-full max-w-xs" defaultValue="Select your month">
-                    <option disabled>
-                      Select your month
-                    </option>
-                    <option>2025</option>
-                    <option>2024</option>
-                    <option>March</option>
-                    <option>April</option>
+                  <select
+                    className="select w-full max-w-xs"
+                    defaultValue="Select your lease"
+                    onChange={(e) => setLeaseTerm(e.target.value)}
+                  >
+                    <option disabled>Select your lease</option>
+                    {leases.map((lease) => (
+                      <option key={lease.leaseStartDate} value={lease._id}>
+                        {formatDate(new Date(lease.leaseStartDate))}{" "}-{" "}
+                        {formatDate(new Date(lease.leaseEndDate))}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 {/* Date Paid For */}
-                  <div className="form-control mb-4">
-                    <label className="label">
-                      <span className="label-text">Select Month</span>
-                    </label>
-                    <select className="select w-full max-w-xs" defaultValue="Select your month" onChange={(e) => setMonthPaidFor(e.target.value)}>
-                      <option disabled={true}>Select your month</option>
-                      {getAvailableMonths().map((month) => (
-                        <option key={month}>{month}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text">Select Month</span>
+                  </label>
+                  <select
+                    className="select w-full max-w-xs"
+                    defaultValue="Select your month"
+                    onChange={(e) => setMonthPaidFor(e.target.value)}
+                  >
+                    <option disabled={true}>Select your month</option>
+                    {getAvailableMonths().map((month) => (
+                      <option key={month}>{month}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="form-control mb-4">
                   <label className="label-text">
                     <span className="label-text">Amount:</span>
@@ -102,8 +111,6 @@ const AddPayment = ({ onSuccess }) => {
                       onChange={(e) => setDatePaid(e.target.value)}
                     />
                   </div>
-
-              
                 </div>
                 {/* Divider */}
                 <div className="divider"></div>

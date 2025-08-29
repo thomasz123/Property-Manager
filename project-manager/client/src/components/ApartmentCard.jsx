@@ -2,7 +2,11 @@ import { Link } from "react-router";
 import { PenSquareIcon, TrashIcon } from "lucide-react";
 import { formatDate, formatCurrency } from "../lib/utils";
 import EditApartment from "../components/EditApartment";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import axios from "axios";
+
+const PORT = import.meta.env.VITE_PORT;
 
 const ApartmentCard = ({
   propertyId,
@@ -10,6 +14,8 @@ const ApartmentCard = ({
   deleteApartmentCard,
   editApartmentCard,
 }) => {
+  const [latestLease, setLatestLease] = useState(null);
+
   const modalRef = useRef(null);
 
   const openModal = () => {
@@ -21,19 +27,44 @@ const ApartmentCard = ({
     editApartmentCard(apartment._id, updatedFormData);
   };
 
+  useEffect(() => {
+    const getLatestLease = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases`
+        );
+        if (res.data.length === 0) {
+          console.log("mama");
+        } else {
+          setLatestLease(res.data.at(-1));
+        }
+      } catch (error) {
+        console.log("Failed to retrieve lease.", error);
+        toast.error("Failed to retrieve lease");
+        return null;
+      }
+    };
+    getLatestLease();
+    console.log(latestLease);
+  }, []);
+
   return (
     <div className="card bg-base-100 hover:shadow-lg transition-all duration-200 border-t-4 border-solid border-[#000033]">
       <Link to={`/properties/${propertyId}/apartments/${apartment._id}`}>
         <div className="card-body">
           <h3 className="card-title text-base-content">{apartment.unit}</h3>
-          <h6 className="card-content">
-            Rent: {formatCurrency(apartment.rent)}
-          </h6>
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-base-content/60">
-              Lease Ends: {formatDate(new Date(apartment.leaseEndDate))}
-            </span>
-          </div>
+          {latestLease && (
+            <div>
+              <h6 className="card-content">
+                Rent: {formatCurrency(latestLease.rent)}
+              </h6>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-base-content/60">
+                  Lease Ends: {formatDate(new Date(latestLease.leaseEndDate))}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </Link>
       <div className="flex justify-end p-4">

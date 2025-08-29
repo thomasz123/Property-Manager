@@ -13,7 +13,7 @@ function ApartmentTenants({ apartment, handleDeleteTenant }) {
       {apartment.tenants?.length > 0 ? (
         <div className="space-y-3">
           {apartment.tenants.map((tenant) => (
-            <div key={tenant._id} className="p-1 rounded-lg bg-base-200 border">
+            <div key={tenant._id} className="p-2 rounded-lg bg-base-200 border">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-medium">{tenant.name}</h3>
               </div>

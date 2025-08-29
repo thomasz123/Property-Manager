@@ -20,7 +20,7 @@ export async function getApartment(req, res) {
     if (!property) {
       return res.status(404).json({ message: "Property not found" });
     }
-    const apartment = await property.apartments.id(req.params.apartmentId);
+    const apartment = property.apartments.id(req.params.apartmentId);
     if (!apartment)
       return res.status(404).json({ message: "Apartment not found" });
     res.status(200).json(apartment);
@@ -36,7 +36,7 @@ export async function deleteApartment(req, res) {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const apartment = await property.apartments.id(req.params.apartmentId);
+    const apartment = property.apartments.id(req.params.apartmentId);
     if (!apartment)
       return res.status(404).json({ message: "Apartment not found" });
 
@@ -55,35 +55,18 @@ export async function updateApartment(req, res) {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const {
-      unit,
-      leaseStartDate,
-      leaseEndDate,
-      rent,
-      tenants,
-      notes,
-      securityDeposit,
-      leaseType,
-      payments,
-    } = req.body;
-    const apartment = await property.apartments.id(req.params.apartmentId);
+    const { unit, notes } = req.body;
+    const apartment = property.apartments.id(req.params.apartmentId);
     if (!apartment)
       return res.status(404).json({ message: "Apartment not found." });
 
+    // Only allow updating unit and notes
     if (unit !== undefined) apartment.unit = unit;
-    if (rent !== undefined) apartment.rent = rent;
-    if (leaseStartDate !== undefined) apartment.leaseStartDate = leaseStartDate;
-    if (leaseEndDate !== undefined) apartment.leaseEndDate = leaseEndDate;
-    if (tenants !== undefined) apartment.tenants = tenants;
     if (notes !== undefined) apartment.notes = notes;
-    if (securityDeposit !== undefined)
-      apartment.securityDeposit = securityDeposit;
-    if (leaseType !== undefined) apartment.leaseType = leaseType;
-    if (payments !== undefined) apartment.payments = payments;
 
     await property.save();
     res.status(200).json(apartment);
-  } catch {
+  } catch (error) {
     console.error("Error in updateApartment Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
@@ -95,78 +78,133 @@ export async function addApartment(req, res) {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const {
-      unit,
-      leaseStartDate,
-      leaseEndDate,
-      rent,
-      tenants,
-      notes,
-      securityDeposit,
-      payments,
-      leaseType,
-    } = req.body;
+    const { unit, notes } = req.body;
 
     const newApartment = property.apartments.push({
       unit,
-      leaseStartDate,
-      leaseEndDate,
-      rent,
-      tenants: tenants ?? [],
       notes,
-      securityDeposit,
-      payments,
-      leaseType,
+      tenants: [],
+      leases: [],
     });
-    const savedApartment = await property.save();
-    res.status(201).json(savedApartment);
+
+    await property.save();
+
+    // Return the newly added apartment
+    res.status(201).json(property.apartments[property.apartments.length - 1]);
   } catch (error) {
     console.error("Error in addApartment Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-export async function getLeases(req, res) {
-  const paymentsByLease = await Property.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(req.params.propertyId) } },
-    { $unwind: "$apartments" },
-    {
-      $match: {
-        "apartments._id": new mongoose.Types.ObjectId(req.params.apartmentId),
-      },
-    },
-    { $unwind: "$apartments.payments" },
-    {
-      $group: {
-        _id: "$apartments.payments.leaseStart",
-        leaseEnd: { $first: "$apartments.payments.leaseEnd" },
-        payments: {
-          $push: {
-            _id: "$apartments.payments._id",
-            amount: "$apartments.payments.amount",
-            dateFor: "$apartments.payments.dateFor",
-            datePaid: "$apartments.payments.datePaid",
-          },
-        },
-        currentRent: { $first: "$apartments.payments.currentRent" },
-        totalAmount: { $sum: "$apartments.payments.amount" },
-      },
-    },
-    { $sort: { _id: -1 } }, // Sort by year descending (newest first)
-    {
-      $project: {
-        _id: 0,
-        leaseStart: "$_id",
-        leaseEnd: 1,
-        currentRent: 1,
-        payments: 1,
-        totalAmount: 1,
-        totalExpected: 1,
-      },
-    },
-  ]);
+/* ---------------- LEASES ---------------- */
 
-  res.json(paymentsByLease);
+export async function addLease(req, res) {
+  try {
+    const property = await Property.findById(req.params.propertyId);
+    if (!property)
+      return res.status(404).json({ message: "Property not found" });
+
+    const apartment = property.apartments.id(req.params.apartmentId);
+    if (!apartment)
+      return res.status(404).json({ message: "Apartment not found" });
+
+    const { rent, leaseStartDate, leaseEndDate, securityDeposit, leaseType } =
+      req.body;
+
+    apartment.leases.push({
+      rent,
+      leaseStartDate,
+      leaseEndDate,
+      securityDeposit,
+      leaseType,
+      payments: [],
+    });
+
+    await property.save();
+    res.status(201).json(apartment.leases[apartment.leases.length - 1]);
+  } catch (error) {
+    console.error("Error in addLease Controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function getLeases(req, res) {
+  try {
+    const property = await Property.findById(req.params.propertyId);
+    if (!property)
+      return res.status(404).json({ message: "Property not found" });
+
+    const apartment = property.apartments.id(req.params.apartmentId);
+    if (!apartment)
+      return res.status(404).json({ message: "Apartment not found" });
+
+    // Sort leases by leaseStartDate ascending (oldest → newest)
+    const sortedLeases = [...apartment.leases].sort(
+      (a, b) => new Date(a.leaseStartDate) - new Date(b.leaseStartDate)
+    );
+
+    res.status(200).json(sortedLeases);
+  } catch (error) {
+    console.error("Error in getLeases Controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function deleteLease(req, res) {
+  try {
+    const { propertyId, apartmentId, leaseId } = req.params;
+
+    const property = await Property.findById(propertyId);
+    if (!property)
+      return res.status(404).json({ message: "Property not found" });
+
+    const apartment = property.apartments.id(apartmentId);
+    if (!apartment)
+      return res.status(404).json({ message: "Apartment not found" });
+
+    const lease = apartment.leases.id(leaseId);
+    if (!lease) return res.status(404).json({ message: "Lease not found" });
+
+    // Remove the lease
+    apartment.leases.pull(req.params.leaseId);
+
+    await property.save();
+
+    res.status(200).json({
+      message: "Lease successfully deleted",
+      leases: apartment.leases,
+    });
+  } catch (error) {
+    console.error("Error in deleteLease Controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/* ---------------- PAYMENTS ---------------- */
+
+export async function addPayment(req, res) {
+  try {
+    const property = await Property.findById(req.params.propertyId);
+    if (!property)
+      return res.status(404).json({ message: "Property not found" });
+
+    const apartment = property.apartments.id(req.params.apartmentId);
+    if (!apartment)
+      return res.status(404).json({ message: "Apartment not found" });
+
+    const { amount, dateFor, datePaid } = req.body;
+    const lease = apartment.leases.id(req.params.leaseId);
+    if (!lease) return res.status(404).json({ message: "Lease not found" });
+
+    lease.payments.push({ amount, dateFor, datePaid });
+
+    await property.save();
+    res.status(201).json(lease);
+  } catch (error) {
+    console.error("Error in addPayment Controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 export async function deletePayment(req, res) {
@@ -175,47 +213,44 @@ export async function deletePayment(req, res) {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const apartment = await property.apartments.id(req.params.apartmentId);
+    const apartment = property.apartments.id(req.params.apartmentId);
     if (!apartment)
       return res.status(404).json({ message: "Apartment not found" });
 
-    const payment = await apartment.payments.id(req.params.paymentId);
+    const lease = apartment.leases.id(req.params.leaseId);
+    if (!lease) return res.status(404).json({ message: "Lease not found" });
+
+    const payment = lease.payments.id(req.params.paymentId);
     if (!payment) return res.status(404).json({ message: "Payment not found" });
 
-    apartment.payments.pull(req.params.paymentId);
-    const savedProperty = await property.save();
-    
-    // Get the updated apartment from the saved property
-    const updatedApartment = savedProperty.apartments.id(req.params.apartmentId);
-    res.status(200).json(updatedApartment);
+    lease.payments.pull(req.params.paymentId);
+    await property.save();
+
+    res.status(200).json(lease);
   } catch (error) {
     console.error("Error in deletePayment Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-export async function addPayment(req, res) {
+export async function getPayments(req, res) {
   try {
-    const property = await Property.findById(req.params.propertyId);
+    const { propertyId, apartmentId, leaseId } = req.params;
+
+    const property = await Property.findById(propertyId);
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const apartment = await property.apartments.id(req.params.apartmentId);
+    const apartment = property.apartments.id(apartmentId);
     if (!apartment)
       return res.status(404).json({ message: "Apartment not found" });
 
-    const { amount, dateFor, datePaid, currentRent, leaseStart, leaseEnd } = req.body;
+    const lease = apartment.leases.id(leaseId);
+    if (!lease) return res.status(404).json({ message: "Lease not found" });
 
-    const newPayment = { amount, dateFor, datePaid, currentRent, leaseStart, leaseEnd };
-
-    apartment.payments.push(newPayment);
-
-    await property.save();
-
-    // const addedTenant = apartment.tenants[apartment.tenants.length - 1];
-    res.status(201).json(apartment);
+    res.status(200).json(lease.payments);
   } catch (error) {
-    console.error("Error in addPayment Controller", error);
+    console.error("Error in getPayments Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

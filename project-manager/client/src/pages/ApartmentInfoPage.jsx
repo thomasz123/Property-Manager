@@ -54,6 +54,44 @@ const ApartmentInfoPage = () => {
     December: 11,
   };
 
+  const leaseModalRef = useRef(null);
+
+  const openLeaseModal = () => leaseModalRef.current?.showModal();
+  const closeLeaseModal = () => leaseModalRef.current?.close();
+
+  const handleAddLease = async (leaseFormData) => {
+    try {
+      setLoading(true);
+      const res = await axios.post(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases`,
+        leaseFormData
+      );
+      setLeases((prev) => [res.data, ...prev]);
+      closeLeaseModal();
+      toast.success("Lease added successfully");
+    } catch (err) {
+      console.error("Error adding lease", err);
+      toast.error("Failed to add lease");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteLease = async (leaseId) => {
+    try {
+      if (!window.confirm("Are you sure you want to delete this lease?"))
+        return;
+      await axios.delete(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${leaseId}`
+      );
+      setLeases((prev) => prev.filter((l) => l._id !== leaseId));
+      toast.success("Lease deleted successfully");
+    } catch (err) {
+      console.error("Error deleting lease", err);
+      toast.error("Failed to delete lease");
+    }
+  };
+
   const handleAddTenant = async (tenantFormData) => {
     try {
       const res = await axios.post(
@@ -95,24 +133,24 @@ const ApartmentInfoPage = () => {
     }
   };
 
-  const handleDeletePayment = async (paymentId) => {
+  const handleDeletePayment = async (leaseId, paymentId) => {
     try {
       if (!window.confirm("Are you sure you want to delete this payment?")) {
         return;
       }
+
       const res = await axios.delete(
-        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/payments/${paymentId}`
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${leaseId}/payments/${paymentId}`
       );
+
+      // res.data is the updated lease
       setLeases((prevLeases) =>
-        prevLeases.map((lease) => ({
-          ...lease,
-          payments: lease.payments.filter(
-            (payment) => payment._id !== paymentId
-          ),
-        }))
+        prevLeases.map((lease) =>
+          lease._id === res.data._id ? res.data : lease
+        )
       );
-      setApartment(res.data)
-      toast.success(`Successfully deleted payment`);
+
+      toast.success("Successfully deleted payment");
     } catch (error) {
       console.log("Error deleting payment", error);
       toast.error("Error deleting payment");
@@ -125,19 +163,22 @@ const ApartmentInfoPage = () => {
       const parsedFormData = {
         ...paymentFormData,
         dateFor: new Date(2025, monthsDict[paymentFormData.dateFor], 1),
-        currentRent: apartment.rent,
-        leaseStart: new Date(apartment.leaseStartDate),
-        leaseEnd: new Date(apartment.leaseEndDate)
+        datePaid: paymentFormData.datePaid,
+        amount: paymentFormData.amount,
+        leaseId: paymentFormData.leaseId,
       };
 
       const res = await axios.post(
-        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/payments`,
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${paymentFormData.leaseId}/payments`,
         parsedFormData
       );
       console.log(res.data);
       // Add the new tenant to the apartment.tenants array
-      setApartment(res.data);
-      
+      setLeases((prevLeases) =>
+        prevLeases.map((lease) =>
+          lease._id === res.data._id ? res.data : lease
+        )
+      );
       closePaymentModal();
       toast.success("Added payment successfully");
     } catch (error) {
@@ -212,7 +253,7 @@ const ApartmentInfoPage = () => {
         </div>
       )}
 
-      {!isLoading && apartment && !isRateLimited && (
+      {!isLoading && apartment && leases && !isRateLimited && (
         <>
           <div className="p-2 flex gap-4">
             <div className="card bg-base-100 border border-solid border-[#000033] p-4 flex-1 h-[35vh] space-y-2">
@@ -220,7 +261,7 @@ const ApartmentInfoPage = () => {
                 <h2 className="card-title text-xl font-bold"> Info: </h2>
               </div>
               <div className="overflow-y-auto">
-                <ApartmentInfo apartment={apartment} />
+                <ApartmentInfo apartment={apartment} leases={leases} isLoading={isLoading}/>
               </div>
             </div>
 
@@ -230,8 +271,11 @@ const ApartmentInfoPage = () => {
                   Tenants ({apartment.tenants?.length || 0})
                 </h2>
                 <div>
-                  <button className="btn btn-primary btn-sm rounded-full">
-                    <PlusIcon className="w-4 h-4" onClick={openTenantModal} />
+                  <button
+                    className="btn btn-primary btn-sm rounded-full "
+                    onClick={openTenantModal}
+                  >
+                    <PlusIcon className="w-4 h-4" />
                   </button>
                   <dialog
                     ref={tenantModalRef}
@@ -263,15 +307,6 @@ const ApartmentInfoPage = () => {
           <div className="w-full px-2 mt-4">
             <div className="border border-solid border-[#000033] rounded-box p-6">
               <div className="flex justify-between items-center ">
-                <h2 className="card-title text-xl font-bold">
-                  Payments ({leases?.length || 0} lease terms)
-                </h2>
-                <button
-                  className="btn btn-primary btn-sm rounded-full"
-                  onClick={openPaymentModal}
-                >
-                  <PlusIcon className="w-4 h-4" />
-                </button>
                 <dialog ref={paymentModalRef} id="my_modal_3" className="modal">
                   <div className="modal-box">
                     <form method="dialog">
@@ -280,7 +315,7 @@ const ApartmentInfoPage = () => {
                         ✕
                       </button>
                     </form>
-                    <AddPayment onSuccess={handleAddPayment} />
+                    <AddPayment onSuccess={handleAddPayment} leases={leases} />
                   </div>
                 </dialog>
               </div>
@@ -289,6 +324,8 @@ const ApartmentInfoPage = () => {
                 leases={leases}
                 handleAddPayment={handleAddPayment}
                 handleDeletePayment={handleDeletePayment}
+                handleAddLease={handleAddLease}
+                handleDeleteLease={handleDeleteLease}
               />
             </div>
           </div>

@@ -1,24 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon } from "lucide-react";
-import axios from "axios";
-import { formatDate } from "../lib/utils";
 
-const PORT = import.meta.env.VITE_PORT;
-
-const EditApartment = ({ propertyId, apartment, onSuccess }) => {
+const EditApartment = ({ apartment, onSuccess }) => {
   const [unit, setUnit] = useState(apartment?.unit || "");
-  const [rent, setRent] = useState(apartment?.rent || 0);
-  const [leaseStartDate, setLeaseStart] = useState(
-    apartment?.leaseStartDate || ""
-  );
-  const [leaseEndDate, setLeaseEnd] = useState(apartment?.leaseEndDate || "");
   const [notes, setNotes] = useState(apartment?.notes || "");
-  const [payments, setPayments] = useState(apartment?.payments || []);
-  const [leaseType, setLeaseType] = useState(apartment?.leaseType || "");
-  const [securityDeposit, setSecurityDeposit] = useState(apartment?.securityDeposit || 0);
-
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -28,19 +13,15 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
       toast.error("Unit field is required");
       return;
     }
+
     setLoading(true);
     await onSuccess({
-      unit: unit,
-      rent: rent,
-      leaseStartDate: leaseStartDate,
-      leaseEndDate: leaseEndDate,
-      notes: notes,
-      securityDeposit: securityDeposit,
-      payments: payments,
-      leaseType: leaseType,
+      unit,
+      notes,
     });
     setLoading(false);
   };
+
   return (
     <div className="bg-white">
       <div className="container mx-auto p-3">
@@ -49,8 +30,9 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
             <div className="card-body">
               <h2 className="card-title text-2xl mb-4">Edit Apartment</h2>
               <form onSubmit={handleSubmit}>
+                {/* Unit */}
                 <div className="form-control mb-4">
-                  <label className="label-text">
+                  <label className="label">
                     <span className="label-text">Unit</span>
                   </label>
                   <input
@@ -59,77 +41,14 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
                     className="input input-bordered"
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
-                  ></input>
+                  />
                 </div>
-                <div className="form-control mb-4">
-                  <label className="label-text">
-                    <span className="label-text">Rent</span>
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Input Rent..."
-                    className="input input-bordered"
-                    value={rent}
-                    onChange={(e) => setRent(e.target.value)}
-                  ></input>
-                </div>
-                <div className="form-control mb-4">
-                  <label className="label-text">
-                    <span className="label-text">Security Deposit</span>
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Input Security Deposit..."
-                    className="input input-bordered"
-                    value={securityDeposit}
-                    onChange={(e) => setSecurityDeposit(e.target.value)}
-                  ></input>
-                </div>
-                <div className="form-control mb-4">
-                  <label className="label-text">
-                    <span className="label-text">Rent</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Input Lease Type..."
-                    className="input input-bordered"
-                    value={leaseType}
-                    onChange={(e) => setLeaseType(e.target.value)}
-                  ></input>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  {/* Lease Start Date */}
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">Lease Start Date</span>
-                    </label>
-                    <input
-                      type="date"
-                      className="input input-bordered"
-                      value={leaseStartDate}
-                      onChange={(e) => setLeaseStart(e.target.value)}
-                    />
-                  </div>
 
-                  {/* Lease End Date */}
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">Lease End Date</span>
-                    </label>
-                    <input
-                      type="date"
-                      className="input input-bordered"
-                      value={leaseEndDate}
-                      onChange={(e) => setLeaseEnd(e.target.value)}
-                      min={leaseStartDate}
-                    />
-                  </div>
-                </div>
                 {/* Notes */}
                 <div className="form-control mb-6">
                   <label className="label">
                     <span className="label-text">Notes</span>
-                    <span className="label-text">Optional</span>
+                    <span className="label-text-alt">Optional</span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered h-24"
@@ -138,11 +57,15 @@ const EditApartment = ({ propertyId, apartment, onSuccess }) => {
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
-                {/* Divider */}
-                <div className="divider"></div>
-                <div className ="card-actions justify-end">
-                  <button type="submit" className="btn btn-primary" disabled={loading} >
-                  {loading ? "Creating..." :"Add Apartment"}
+
+                {/* Actions */}
+                <div className="card-actions justify-end">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? "Updating..." : "Update Apartment"}
                   </button>
                 </div>
               </form>
