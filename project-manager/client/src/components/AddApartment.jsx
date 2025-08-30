@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "lucide-react";
 import axios from "axios";
+import { auth } from "../firebase/firebase"; // import your firebase auth instance
 
 const PORT = import.meta.env.VITE_PORT;
 
@@ -23,11 +24,16 @@ const AddApartment = ({ propertyId }) => {
 
     setLoading(true);
     try {
+      // Get current user's ID token from Firebase
+      const token = await auth.currentUser.getIdToken();
+
       await axios.post(
         `http://localhost:${PORT}/api/properties/${propertyId}/apartments`,
+        { unit, notes },
         {
-          unit,
-          notes,
+          headers: {
+            Authorization: `Bearer ${token}`, // pass token to backend
+          },
         }
       );
 

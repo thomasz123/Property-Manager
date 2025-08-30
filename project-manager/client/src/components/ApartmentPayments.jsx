@@ -3,6 +3,7 @@ import { formatDate, formatCurrency } from "../lib/utils";
 import { TrashIcon } from "lucide-react";
 import AddLease from "./AddLease";
 import AddPayment from "./AddPayment";
+import { useParams } from "react-router";
 
 const ApartmentPayments = ({
   apartment,
@@ -12,12 +13,25 @@ const ApartmentPayments = ({
   handleDeleteLease,
   handleAddLease,
 }) => {
+  const { propertyId } = useParams();
   const leaseModalRef = useRef(null);
   const paymentModalRef = useRef(null);
 
   const openLeaseModal = () => leaseModalRef.current.showModal();
   const openPaymentModal = () => paymentModalRef.current.showModal();
 
+  // Add this function to handle payment and close modal
+  const handleAddPaymentAndClose = async (paymentFormData) => {
+    await handleAddPayment(paymentFormData);
+    paymentModalRef.current?.close();
+  };
+
+  // Add this function to handle lease and close modal  
+  const handleAddLeaseAndClose = async (leaseFormData) => {
+    await handleAddLease(leaseFormData);
+    leaseModalRef.current?.close();
+  };
+  
   const groupPaymentsByMonth = (payments) => {
     const grouped = {};
     payments.forEach((payment) => {
@@ -84,7 +98,11 @@ const ApartmentPayments = ({
                 ✕
               </button>
             </form>
-            <AddLease onSuccess={handleAddLease} />
+            <AddLease
+              apartmentId={apartment._id}
+              propertyId={propertyId}
+              onSuccess={handleAddLeaseAndClose}
+            />
           </div>
         </dialog>
 
@@ -96,7 +114,12 @@ const ApartmentPayments = ({
                 ✕
               </button>
             </form>
-            <AddPayment onSuccess={handleAddPayment} leases={leases} />
+            <AddPayment
+              apartmentId={apartment._id}
+              propertyId={propertyId}
+              onSuccess={handleAddPaymentAndClose}
+              leases={leases}
+            />
           </div>
         </dialog>
       </div>
