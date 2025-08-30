@@ -4,6 +4,7 @@ const propertySchema = new mongoose.Schema(
   {
     owner: {
       type: String,
+      required: true
     },
     address: {
       type: String,

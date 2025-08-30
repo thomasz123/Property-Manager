@@ -1,51 +1,53 @@
 import React, { useState } from "react";
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
 import Navbar from "../components/Navbar";
-import axios from "axios";
 import toast from "react-hot-toast";
 import RateLimitedUI from "../components/RateLimitedUI";
 import {
-  doSignInWithEmailAndPassword,
+  doCreateUserWithEmailAndPassword,
   doSignInWithGoogle,
 } from "../firebase/auth";
 import { useAuth } from "../contexts/authContexts";
-import { Navigate } from "react-router";
 
-const PORT = import.meta.env.VITE_PORT;
- 
-
-const Login = () => {
+const Register = () => {
   const { userLoggedIn } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setIsRateLimited(false);
-    if (!isSigningIn) {
-      setIsSigningIn(true);
-      await doSignInWithEmailAndPassword(email, password).then(() => {
-          toast.success("Logged in Successfully!");
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    if (!isSigningUp) {
+      setIsSigningUp(true);
+      await doCreateUserWithEmailAndPassword(email, password)
+        .then(() => {
+          toast.success("Account created successfully!");
         })
         .catch((err) => {
-          toast.error(err.message || "Log in failed.");
-          setIsSigningIn(false);
-        });;
+          toast.error(err.message || "Sign up failed.");
+          setIsSigningUp(false);
+        });
     }
   };
 
-  const onGoogleSignIn = (e) => {
+  const onGoogleSignUp = (e) => {
     e.preventDefault();
-    if (!isSigningIn) {
-      setIsSigningIn(true);
-      doSignInWithGoogle()
-        .catch((err) => {
-          toast.error(err.message || "Google Log in failed.");
-          setIsSigningIn(false);
-        });
+    if (!isSigningUp) {
+      setIsSigningUp(true);
+      doSignInWithGoogle().catch((err) => {
+        toast.error(err.message || "Google sign up failed.");
+        setIsSigningUp(false);
+      });
     }
   };
 
@@ -61,8 +63,8 @@ const Login = () => {
           {!isRateLimited && (
             <div className="card bg-base-100 shadow-md">
               <div className="card-body">
-                <h2 className="card-title text-2xl mb-6">Login</h2>
-                <form onSubmit={handleLogin}>
+                <h2 className="card-title text-2xl mb-6">Register</h2>
+                <form onSubmit={handleRegister}>
                   {/* Email */}
                   <div className="form-control mb-4">
                     <label className="label">
@@ -79,7 +81,7 @@ const Login = () => {
                   </div>
 
                   {/* Password */}
-                  <div className="form-control mb-6">
+                  <div className="form-control mb-4">
                     <label className="label">
                       <span className="label-text">Password</span>
                     </label>
@@ -93,14 +95,29 @@ const Login = () => {
                     />
                   </div>
 
+                  {/* Confirm Password */}
+                  <div className="form-control mb-6">
+                    <label className="label">
+                      <span className="label-text">Confirm Password</span>
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Re-enter your password..."
+                      className="input input-bordered"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
                   {/* Submit Button */}
                   <div className="card-actions justify-end">
                     <button
                       type="submit"
                       className="btn btn-primary"
-                      disabled={isSigningIn}
+                      disabled={isSigningUp}
                     >
-                      {isSigningIn ? "Logging in..." : "Login"}
+                      {isSigningUp ? "Registering..." : "Register"}
                     </button>
                   </div>
                 </form>
@@ -108,20 +125,20 @@ const Login = () => {
                 {/* Divider */}
                 <div className="divider my-4">or</div>
 
-                {/* Sign Up Link */}
+                {/* Login Link */}
                 <div className="text-center">
-                  <span>Don't have an account? </span>
-                  <Link to="/register" className="text-primary font-semibold">
-                    Sign Up
+                  <span>Already have an account? </span>
+                  <Link to="/login" className="text-primary font-semibold">
+                    Login
                   </Link>
                 </div>
+
+                {/* Google Sign Up */}
                 <button
-                  disabled={isSigningIn}
-                  onClick={(e) => {
-                    onGoogleSignIn(e);
-                  }}
+                  disabled={isSigningUp}
+                  onClick={(e) => onGoogleSignUp(e)}
                   className={`w-full flex items-center justify-center gap-x-3 py-2.5 border rounded-lg text-sm font-medium  ${
-                    isSigningIn
+                    isSigningUp
                       ? "cursor-not-allowed"
                       : "hover:bg-gray-100 transition duration-300 active:bg-gray-100"
                   }`}
@@ -156,7 +173,7 @@ const Login = () => {
                       </clipPath>
                     </defs>
                   </svg>
-                  {isSigningIn ? "Signing In..." : "Continue with Google"}
+                  {isSigningUp ? "Signing Up..." : "Continue with Google"}
                 </button>
               </div>
             </div>
@@ -167,4 +184,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

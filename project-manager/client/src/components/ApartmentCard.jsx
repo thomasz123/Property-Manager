@@ -5,6 +5,7 @@ import EditApartment from "../components/EditApartment";
 import { useRef, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { auth } from "../firebase/firebase"; // added auth
 
 const PORT = import.meta.env.VITE_PORT;
 
@@ -30,11 +31,17 @@ const ApartmentCard = ({
   useEffect(() => {
     const getLatestLease = async () => {
       try {
+        const token = await auth.currentUser.getIdToken(); // fetch user token
         const res = await axios.get(
-          `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases`
+          `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // attach token
+            },
+          }
         );
         if (res.data.length === 0) {
-          console.log("mama");
+          console.log("No leases found");
         } else {
           setLatestLease(res.data.at(-1));
         }
@@ -45,7 +52,6 @@ const ApartmentCard = ({
       }
     };
     getLatestLease();
-    console.log(latestLease);
   }, []);
 
   return (
