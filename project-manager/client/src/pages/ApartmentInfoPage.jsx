@@ -1,52 +1,44 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import { useParams, useNavigate } from "react-router";
+import { useParams } from "react-router";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 import RateLimitedUI from "../components/RateLimitedUI";
 import ApartmentInfo from "../components/ApartmentInfo";
 import ApartmentTenants from "../components/ApartmentTenants";
 import ApartmentPayments from "../components/ApartmentPayments";
 import AddTenant from "../components/AddTenant";
 import AddPayment from "../components/AddPayment";
+import { useRef } from "react";
 import { PlusIcon } from "lucide-react";
 
 const PORT = import.meta.env.VITE_PORT;
 
 const ApartmentInfoPage = () => {
   const { propertyId, apartmentId } = useParams();
-  const [apartment, setApartment] = useState(null);
+  const [apartment, setApartment] = useState(null); // null until fetched
   const [leases, setLeases] = useState([]);
   const [isRateLimited, setIsRateLimited] = useState(false);
-  const [isLoading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true); // true while fetching
 
   const tenantModalRef = useRef(null);
+  const paymentModalRef = useRef(null);
 
-  const auth = getAuth();
-  const navigate = useNavigate();
-
-  const getToken = async () => {
-    const user = auth.currentUser;
-    if (user) return await user.getIdToken();
-    return null;
+  const openTenantModal = () => {
+    tenantModalRef.current?.showModal();
   };
 
-  const axiosAuth = async (options) => {
-    const token = await getToken();
-    if (!token) throw new Error("No Firebase token found");
-    return axios({
-      ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  const closeTenantModal = () => {
+    tenantModalRef.current?.close();
   };
 
-  const openTenantModal = () => tenantModalRef.current?.showModal();
-  const closeTenantModal = () => tenantModalRef.current?.close();
+  const openPaymentModal = () => {
+    paymentModalRef.current?.showModal();
+  };
 
+  const closePaymentModal = () => {
+    paymentModalRef.current?.close();
+  };
   const monthsDict = {
     January: 0,
     February: 1,
@@ -62,15 +54,20 @@ const ApartmentInfoPage = () => {
     December: 11,
   };
 
+  const leaseModalRef = useRef(null);
+
+  const openLeaseModal = () => leaseModalRef.current?.showModal();
+  const closeLeaseModal = () => leaseModalRef.current?.close();
+
   const handleAddLease = async (leaseFormData) => {
     try {
       setLoading(true);
-      const res = await axiosAuth({
-        method: "post",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases`,
-        data: leaseFormData,
-      });
+      const res = await axios.post(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases`,
+        leaseFormData
+      );
       setLeases((prev) => [res.data, ...prev]);
+      closeLeaseModal();
       toast.success("Lease added successfully");
     } catch (err) {
       console.error("Error adding lease", err);
@@ -84,10 +81,9 @@ const ApartmentInfoPage = () => {
     try {
       if (!window.confirm("Are you sure you want to delete this lease?"))
         return;
-      await axiosAuth({
-        method: "delete",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${leaseId}`,
-      });
+      await axios.delete(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${leaseId}`
+      );
       setLeases((prev) => prev.filter((l) => l._id !== leaseId));
       toast.success("Lease deleted successfully");
     } catch (err) {
@@ -98,11 +94,12 @@ const ApartmentInfoPage = () => {
 
   const handleAddTenant = async (tenantFormData) => {
     try {
-      const res = await axiosAuth({
-        method: "post",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/tenants`,
-        data: tenantFormData,
-      });
+      const res = await axios.post(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/tenants`,
+        tenantFormData
+      );
+
+      // Add the new tenant to the apartment.tenants array
       setApartment(res.data);
       closeTenantModal();
       toast.success("Added tenant successfully");
@@ -116,15 +113,15 @@ const ApartmentInfoPage = () => {
 
   const handleDeleteTenant = async (tenantId) => {
     try {
-      if (!window.confirm("Are you sure you want to delete this tenant?"))
+      if (!window.confirm("Are you sure you want to delete this tenant?")) {
         return;
+      }
       const tenantToDelete = apartment.tenants.find(
         (tenant) => tenant._id === tenantId
       );
-      await axiosAuth({
-        method: "delete",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/tenants/${tenantId}`,
-      });
+      const res = await axios.delete(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/tenants/${tenantId}`
+      );
       setApartment((prev) => ({
         ...prev,
         tenants: prev.tenants.filter((tnt) => tnt._id !== tenantId),
@@ -138,14 +135,15 @@ const ApartmentInfoPage = () => {
 
   const handleDeletePayment = async (leaseId, paymentId) => {
     try {
-      if (!window.confirm("Are you sure you want to delete this payment?"))
+      if (!window.confirm("Are you sure you want to delete this payment?")) {
         return;
+      }
 
-      const res = await axiosAuth({
-        method: "delete",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${leaseId}/payments/${paymentId}`,
-      });
+      const res = await axios.delete(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${leaseId}/payments/${paymentId}`
+      );
 
+      // res.data is the updated lease
       setLeases((prevLeases) =>
         prevLeases.map((lease) =>
           lease._id === res.data._id ? res.data : lease
@@ -161,6 +159,7 @@ const ApartmentInfoPage = () => {
 
   const handleAddPayment = async (paymentFormData) => {
     try {
+      console.log("hullo");
       const parsedFormData = {
         ...paymentFormData,
         dateFor: new Date(2025, monthsDict[paymentFormData.dateFor], 1),
@@ -169,17 +168,18 @@ const ApartmentInfoPage = () => {
         leaseId: paymentFormData.leaseId,
       };
 
-      const res = await axiosAuth({
-        method: "post",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${paymentFormData.leaseId}/payments`,
-        data: parsedFormData,
-      });
-
+      const res = await axios.post(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartment._id}/leases/${paymentFormData.leaseId}/payments`,
+        parsedFormData
+      );
+      console.log(res.data);
+      // Add the new tenant to the apartment.tenants array
       setLeases((prevLeases) =>
         prevLeases.map((lease) =>
           lease._id === res.data._id ? res.data : lease
         )
       );
+      closePaymentModal();
       toast.success("Added payment successfully");
     } catch (error) {
       console.log("Error adding payment", error);
@@ -189,44 +189,50 @@ const ApartmentInfoPage = () => {
     }
   };
 
-  // Authentication check effect
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      // User is authenticated, fetch data
-      setLoading(true);
+    const fetchApartment = async () => {
       try {
-        const [apartmentRes, leasesRes] = await Promise.all([
-          axiosAuth({
-            method: "get",
-            url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`,
-          }),
-          axiosAuth({
-            method: "get",
-            url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}/leases`,
-          }),
-        ]);
-
-        setApartment(apartmentRes.data);
-        setLeases(leasesRes.data);
+        setLoading(true);
+        const res = await axios.get(
+          `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`
+        );
+        console.log(res.data);
+        setApartment(res.data);
         setIsRateLimited(false);
       } catch (error) {
-        console.error("Error fetching data", error.response);
+        console.error("Error fetching apartment", error.response);
         if (error.response?.status === 429) {
           setIsRateLimited(true);
         } else {
-          toast.error("Failed to load apartment data");
+          toast.error("Failed to load apartment");
         }
       } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
+    const fetchLeases = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}/leases`
+        );
+        setLeases(res.data);
+        console.log(res.data);
+        setIsRateLimited(false);
+      } catch (error) {
+        console.error("Error fetching leases", error.response);
+        if (error.response?.status === 429) {
+          setIsRateLimited(true);
+        } else {
+          toast.error("Failed to load leases");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeases();
+    fetchApartment();
   }, []);
 
   return (
@@ -240,6 +246,7 @@ const ApartmentInfoPage = () => {
       </div>
 
       {isRateLimited && <RateLimitedUI />}
+
       {isLoading && (
         <div className="text-center text-primary py-10">
           Loading Apartment...
@@ -254,11 +261,7 @@ const ApartmentInfoPage = () => {
                 <h2 className="card-title text-xl font-bold"> Info: </h2>
               </div>
               <div className="overflow-y-auto">
-                <ApartmentInfo
-                  apartment={apartment}
-                  leases={leases}
-                  isLoading={isLoading}
-                />
+                <ApartmentInfo apartment={apartment} leases={leases} isLoading={isLoading}/>
               </div>
             </div>
 
@@ -269,7 +272,7 @@ const ApartmentInfoPage = () => {
                 </h2>
                 <div>
                   <button
-                    className="btn btn-primary btn-sm rounded-full"
+                    className="btn btn-primary btn-sm rounded-full "
                     onClick={openTenantModal}
                   >
                     <PlusIcon className="w-4 h-4" />
@@ -281,6 +284,7 @@ const ApartmentInfoPage = () => {
                   >
                     <div className="modal-box">
                       <form method="dialog">
+                        {/* if there is a button in form, it will close the modal */}
                         <button className="btn btn-xs btn-circle btn-ghost absolute right-2 top-2">
                           ✕
                         </button>
@@ -302,6 +306,19 @@ const ApartmentInfoPage = () => {
 
           <div className="w-full px-2 mt-4">
             <div className="border border-solid border-[#000033] rounded-box p-6">
+              <div className="flex justify-between items-center ">
+                <dialog ref={paymentModalRef} id="my_modal_3" className="modal">
+                  <div className="modal-box">
+                    <form method="dialog">
+                      {/* if there is a button in form, it will close the modal */}
+                      <button className="btn btn-xs btn-circle btn-ghost absolute right-2 top-2">
+                        ✕
+                      </button>
+                    </form>
+                    <AddPayment onSuccess={handleAddPayment} leases={leases} />
+                  </div>
+                </dialog>
+              </div>
               <ApartmentPayments
                 apartment={apartment}
                 leases={leases}

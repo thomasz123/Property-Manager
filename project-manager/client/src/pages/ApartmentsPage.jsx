@@ -3,10 +3,9 @@ import Navbar from "../components/Navbar";
 import axios from "axios";
 import toast from "react-hot-toast";
 import RateLimitedUI from "../components/RateLimitedUI";
-import { useParams, Link, useNavigate } from "react-router";
+import { useParams, Link } from "react-router";
 import ApartmentCard from "../components/ApartmentCard";
 import { PlusCircle } from "lucide-react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const PORT = import.meta.env.VITE_PORT;
 
@@ -16,40 +15,12 @@ const ApartmentPage = () => {
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [isLoading, setLoading] = useState(true);
 
-  const auth = getAuth();
-  const navigate = useNavigate();
-
-  const getToken = async () => {
-    const user = auth.currentUser;
-    if (user) return await user.getIdToken();
-    return null;
-  };
-
-  const axiosAuth = async (options) => {
-    const token = await getToken();
-    if (!token) throw new Error("No Firebase token found");
-    return axios({
-      ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  };
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      setLoading(true);
+    const fetchApartments = async () => {
       try {
-        const res = await axiosAuth({
-          method: "get",
-          url: `http://localhost:${PORT}/api/properties/${propertyId}`,
-        });
+        const res = await axios.get(
+          `http://localhost:${PORT}/api/properties/${propertyId}`
+        );
         setApartments(res.data.apartments || []);
         setIsRateLimited(false);
       } catch (error) {
@@ -62,10 +33,9 @@ const ApartmentPage = () => {
       } finally {
         setLoading(false);
       }
-    });
-
-    return () => unsubscribe();
-  }, []);
+    };
+    fetchApartments();
+  }, [propertyId]);
 
   const handleDeleteApartment = async (propertyId, apartmentId) => {
     try {
@@ -75,10 +45,9 @@ const ApartmentPage = () => {
       const apartmentToDelete = apartments.find(
         (apartment) => apartment._id === apartmentId
       );
-      await axiosAuth({
-        method: "delete",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`,
-      });
+      await axios.delete(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`
+      );
 
       setApartments((prevApartments) =>
         prevApartments.filter((apt) => apt._id !== apartmentId)
@@ -92,11 +61,10 @@ const ApartmentPage = () => {
 
   const handleEditApartment = async (apartmentId, updatedFormData) => {
     try {
-      const res = await axiosAuth({
-        method: "put",
-        url: `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`,
-        data: updatedFormData,
-      });
+      const res = await axios.put(
+        `http://localhost:${PORT}/api/properties/${propertyId}/apartments/${apartmentId}`,
+        updatedFormData
+      );
       setApartments((prev) =>
         prev.map((apt) => (apt._id === apartmentId ? res.data : apt))
       );
@@ -108,6 +76,8 @@ const ApartmentPage = () => {
       setLoading(false);
     }
   };
+
+
 
   return (
     <div className="min-h-screen overflow-y-auto [scrollbar-gutter:stable]">
@@ -132,10 +102,6 @@ const ApartmentPage = () => {
           </div>
         )}
 
-        {!isLoading && apartments.length === 0 && !isRateLimited && (
-          <div className="text-center py-10 text-gray-500">No apartments found.</div>
-        )}
-
         {apartments.length > 0 && !isRateLimited && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {apartments.map((apartment) => (
@@ -145,6 +111,7 @@ const ApartmentPage = () => {
                   apartment={apartment}
                   deleteApartmentCard={handleDeleteApartment}
                   editApartmentCard={handleEditApartment}
+                   // async issue here
                 />
               </div>
             ))}
@@ -154,5 +121,4 @@ const ApartmentPage = () => {
     </div>
   );
 };
-
 export default ApartmentPage;

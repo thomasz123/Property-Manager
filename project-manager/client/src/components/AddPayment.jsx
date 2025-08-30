@@ -39,11 +39,6 @@ const AddPayment = ({ onSuccess, leases }) => {
       console.log("Error adding payment", error);
     } finally {
       setLoading(false);
-      setLeaseTerm("")
-      setAmount(0)
-      setDatePaid("")
-      setMonthPaidFor("")
-      
     }
   };
 

@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "lucide-react";
 import axios from "axios";
-import { auth } from "../firebase/firebase"; // Import Firebase auth
 
 const PORT = import.meta.env.VITE_PORT;
 
 const AddProperty = () => {
   const [address, setAddress] = useState("");
+  const [owner, setOwner] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -23,19 +23,10 @@ const AddProperty = () => {
 
     setLoading(true);
     try {
-      // Get current user's Firebase ID token
-      const token = await auth.currentUser.getIdToken();
-
-      await axios.post(
-        `http://localhost:${PORT}/api/properties/`,
-        { address },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // attach token for backend verification
-          },
-        }
-      );
-
+      await axios.post(`http://localhost:${PORT}/api/properties/`, {
+        address,
+        owner
+      });
       toast.success("Property successfully added");
       navigate("/");
     } catch (error) {
@@ -45,7 +36,6 @@ const AddProperty = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-base-200">
       <div className="container mx-auto px-4 py-8">
@@ -72,16 +62,26 @@ const AddProperty = () => {
                   ></input>
                 </div>
 
+                <div className="form-control mb-4">
+                  <label className="label-text">
+                    <span className="label-text">Owner</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Input Owner..."
+                    className="input input-bordered"
+                    value={owner}
+                    onChange={(e) => setOwner(e.target.value)}
+                  ></input>
+                </div>
+
                 <div className="divider"></div>
-                <div className="card-actions justify-end">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? "Creating..." : "Add Property"}
+                <div className ="card-actions justify-end">
+                  <button type="submit" className="btn btn-primary" disabled={loading} >
+                  {loading ? "Creating..." :"Add Property"}
                   </button>
                 </div>
+
               </form>
             </div>
           </div>

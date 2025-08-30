@@ -7,7 +7,6 @@ import "./index.css";
 import Navbar from "./components/Navbar";
 import ApartmentInfoPage from "./pages/ApartmentInfoPage";
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage"
 
 const App = () => {
   return (
@@ -25,7 +24,6 @@ const App = () => {
           element={<ApartmentInfoPage />}
         />
         <Route path="/login" element={<LoginPage/>} />
-        <Route path="/register" element={<RegisterPage/>} />
       </Routes>
     </div>
   );

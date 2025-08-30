@@ -2,15 +2,11 @@ import { Property } from "../models/Property.js";
 
 export async function addTenant(req, res) {
   try {
-    const { name, email, phone, people } = req.body;
+    const { name, email, phone , people} = req.body;
 
-    const property = await Property.findOne({
-      _id: req.params.propertyId,
-      owner: req.user.uid, // ✅ ensure ownership
-    });
-
+    const property = await Property.findById(req.params.propertyId);
     if (!property) {
-      return res.status(404).json({ message: "Property not found or unauthorized" });
+      return res.status(404).json({ message: "Property not found" });
     }
 
     const apartment = property.apartments.id(req.params.apartmentId);
@@ -18,11 +14,12 @@ export async function addTenant(req, res) {
       return res.status(404).json({ message: "Apartment not found" });
     }
 
-    const newTenant = { name, email, phone, people };
+    const newTenant = { name, email, phone, people};
 
     apartment.tenants.push(newTenant);
     await property.save();
 
+    // const addedTenant = apartment.tenants[apartment.tenants.length - 1];
     res.status(201).json(apartment);
   } catch (error) {
     console.error("Error in addTenant Controller", error);
@@ -32,13 +29,9 @@ export async function addTenant(req, res) {
 
 export async function deleteTenant(req, res) {
   try {
-    const property = await Property.findOne({
-      _id: req.params.propertyId,
-      owner: req.user.uid, // ✅ secure
-    });
-
+    const property = await Property.findById(req.params.propertyId);
     if (!property) {
-      return res.status(404).json({ message: "Property not found or unauthorized" });
+      return res.status(404).json({ message: "Property not found" });
     }
 
     const apartment = property.apartments.id(req.params.apartmentId);
@@ -56,22 +49,17 @@ export async function deleteTenant(req, res) {
     await property.save();
     res.status(200).json(apartment);
   } catch (error) {
-    console.error("Error in deleteTenant Controller", error);
+    console.error("Error in removeTenant Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
 export async function updateTenant(req, res) {
   try {
-    const { name, email, phone, people } = req.body;
-
-    const property = await Property.findOne({
-      _id: req.params.propertyId,
-      owner: req.user.uid, // ✅ secure
-    });
-
+    const { name, email, phone, people} = req.body;
+    const property = await Property.findById(req.params.propertyId);
     if (!property) {
-      return res.status(404).json({ message: "Property not found or unauthorized" });
+      return res.status(404).json({ message: "Property not found" });
     }
 
     const apartment = property.apartments.id(req.params.apartmentId);
@@ -99,13 +87,9 @@ export async function updateTenant(req, res) {
 
 export async function getTenants(req, res) {
   try {
-    const property = await Property.findOne({
-      _id: req.params.propertyId,
-      owner: req.user.uid, // ✅ secure
-    });
-
+    const property = await Property.findById(req.params.propertyId);
     if (!property) {
-      return res.status(404).json({ message: "Property not found or unauthorized" });
+      return res.status(404).json({ message: "Property not found" });
     }
 
     const apartment = property.apartments.id(req.params.apartmentId);
@@ -115,7 +99,7 @@ export async function getTenants(req, res) {
 
     res.status(200).json(apartment.tenants);
   } catch (error) {
-    console.error("Error in getTenants Controller", error);
+    console.error("Error in updateTenant Controller", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
